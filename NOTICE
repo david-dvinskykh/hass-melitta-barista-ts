@@ -1,0 +1,17 @@
+hass-melitta-barista-ts
+Copyright (c) 2026 David Dvinskykh
+
+This product includes protocol documentation derived from
+melitta-barista-ha (https://github.com/dzerik/melitta-barista-ha),
+Copyright (c) 2025 dzerik, distributed under the MIT License.
+
+Specifically, the following protocol facts in this repository were taken
+from that project's documentation and constant tables:
+
+  * the RC4 stream key used by the Eugster/Frismag BLE stack,
+  * the 256-byte lookup table used by the HU handshake verifier,
+  * the GATT service and characteristic UUIDs,
+  * the command set, frame layout, status/recipe payload layouts, register
+    IDs and recipe IDs described in docs/PROTOCOL.md.
+
+The source code in this repository is an independent implementation.

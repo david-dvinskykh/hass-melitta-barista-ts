@@ -1,0 +1,302 @@
+{
+  "config": {
+    "flow_title": "{name} ({address})",
+    "step": {
+      "confirm": {
+        "title": "Add coffee machine",
+        "description": "Set up {name} at {address}?\n\nThe machine has to be switched on and Bluetooth enabled in its menu. The first connection may take a moment while the two devices bond."
+      },
+      "user": {
+        "title": "Add coffee machine",
+        "data": {
+          "address": "Machine"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "This machine is already set up",
+      "no_devices_found": "No Melitta Barista Smart machine found. Switch the machine on, enable Bluetooth in its menu, and make sure it is in range of a Bluetooth adapter or proxy.",
+      "not_supported": "This Bluetooth device is not a Melitta Barista Smart machine"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Connection settings",
+        "data": {
+          "poll_interval": "Status poll interval",
+          "frame_timeout": "Command timeout",
+          "connect_timeout": "Connection timeout",
+          "pairing_agent": "Register a Bluetooth pairing agent"
+        },
+        "data_description": {
+          "poll_interval": "How often the machine status is refreshed.",
+          "frame_timeout": "How long to wait for the machine to answer a command.",
+          "connect_timeout": "How long to wait for the Bluetooth connection to come up.",
+          "pairing_agent": "The machine bonds with numeric comparison, which the default BlueZ agent cannot confirm. Leave this on unless you bond through an ESPHome Bluetooth proxy or pair manually."
+        }
+      }
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "brewing": { "name": "Brewing" },
+      "maintenance": { "name": "Maintenance running" },
+      "water_tank_empty": { "name": "Water tank empty" },
+      "trays_full": { "name": "Trays full" },
+      "trays_missing": { "name": "Trays missing" },
+      "brew_unit_removed": { "name": "Brew unit removed" },
+      "powder_lid_open": { "name": "Powder lid open" },
+      "beans_empty_hopper_1": { "name": "Bean hopper 1 empty" },
+      "beans_empty_hopper_2": { "name": "Bean hopper 2 empty" },
+      "easy_clean_required": { "name": "Easy Clean required" }
+    },
+    "button": {
+      "brew": { "name": "Brew" },
+      "cancel": { "name": "Cancel" },
+      "sync_clock": { "name": "Sync clock" }
+    },
+    "number": {
+      "portion": { "name": "Cup size" },
+      "auto_off_after": { "name": "Switch off after" }
+    },
+    "select": {
+      "drink": {
+        "name": "Drink",
+        "state": {
+          "espresso": "Espresso",
+          "ristretto": "Ristretto",
+          "lungo": "Lungo",
+          "espresso_doppio": "Espresso Doppio",
+          "ristretto_doppio": "Ristretto Doppio",
+          "cafe_creme": "Café Crème",
+          "cafe_creme_doppio": "Café Crème Doppio",
+          "americano": "Americano",
+          "americano_extra": "Americano Extra",
+          "long_black": "Long Black",
+          "red_eye": "Red Eye",
+          "black_eye": "Black Eye",
+          "dead_eye": "Dead Eye",
+          "cappuccino": "Cappuccino",
+          "espresso_macchiato": "Espresso Macchiato",
+          "caffe_latte": "Caffè Latte",
+          "cafe_au_lait": "Café au Lait",
+          "flat_white": "Flat White",
+          "latte_macchiato": "Latte Macchiato",
+          "latte_macchiato_extra": "Latte Macchiato Extra",
+          "latte_macchiato_triple": "Latte Macchiato Triple",
+          "milk": "Milk",
+          "milk_froth": "Milk froth",
+          "hot_water": "Hot water"
+        }
+      },
+      "intensity": {
+        "name": "Strength",
+        "state": {
+          "very_mild": "Very mild",
+          "mild": "Mild",
+          "medium": "Medium",
+          "strong": "Strong",
+          "very_strong": "Very strong"
+        }
+      },
+      "brew_temperature": {
+        "name": "Brew temperature",
+        "state": {
+          "cold": "Cold",
+          "normal": "Normal",
+          "high": "High"
+        }
+      },
+      "bean_hopper": {
+        "name": "Bean hopper",
+        "state": {
+          "recipe_default": "Recipe default",
+          "hopper_1": "Hopper 1",
+          "hopper_2": "Hopper 2"
+        }
+      }
+    },
+    "sensor": {
+      "status": {
+        "name": "Status",
+        "state": {
+          "ready": "Ready",
+          "brewing": "Brewing",
+          "cleaning": "Cleaning",
+          "descaling": "Descaling",
+          "filter_insert": "Insert filter",
+          "filter_replace": "Replace filter",
+          "filter_remove": "Remove filter",
+          "switching_off": "Switching off",
+          "easy_clean": "Easy Clean",
+          "intensive_clean": "Intensive cleaning",
+          "evaporating": "Evaporating",
+          "busy": "Busy",
+          "unknown_state": "Unknown"
+        }
+      },
+      "sub_status": {
+        "name": "Step",
+        "state": {
+          "idle": "Idle",
+          "grinding": "Grinding",
+          "extracting": "Extracting",
+          "steaming": "Steaming milk",
+          "dispensing_water": "Dispensing water",
+          "preparing": "Preparing",
+          "unknown_state": "Unknown"
+        }
+      },
+      "attention": {
+        "name": "Needs attention",
+        "state": {
+          "none": "Nothing",
+          "brew_unit_removed": "Brew unit removed",
+          "trays_missing": "Trays missing",
+          "empty_trays": "Empty the trays",
+          "fill_water": "Fill the water tank",
+          "close_powder_lid": "Close the powder lid",
+          "fill_powder": "Fill ground coffee",
+          "unknown_state": "Unknown"
+        }
+      },
+      "progress": { "name": "Progress" },
+      "total_cups": { "name": "Total drinks" },
+      "clock": { "name": "Machine clock" },
+      "firmware": { "name": "Firmware" },
+      "drink_cups": { "name": "{drink} count" }
+    },
+    "switch": {
+      "two_cups": { "name": "Two cups" }
+    }
+  },
+  "selector": {
+    "drink": {
+      "options": {
+        "espresso": "Espresso",
+        "ristretto": "Ristretto",
+        "lungo": "Lungo",
+        "espresso_doppio": "Espresso Doppio",
+        "ristretto_doppio": "Ristretto Doppio",
+        "cafe_creme": "Café Crème",
+        "cafe_creme_doppio": "Café Crème Doppio",
+        "americano": "Americano",
+        "americano_extra": "Americano Extra",
+        "long_black": "Long Black",
+        "red_eye": "Red Eye",
+        "black_eye": "Black Eye",
+        "dead_eye": "Dead Eye",
+        "cappuccino": "Cappuccino",
+        "espresso_macchiato": "Espresso Macchiato",
+        "caffe_latte": "Caffè Latte",
+        "cafe_au_lait": "Café au Lait",
+        "flat_white": "Flat White",
+        "latte_macchiato": "Latte Macchiato",
+        "latte_macchiato_extra": "Latte Macchiato Extra",
+        "latte_macchiato_triple": "Latte Macchiato Triple",
+        "milk": "Milk",
+        "milk_froth": "Milk froth",
+        "hot_water": "Hot water"
+      }
+    },
+    "intensity": {
+      "options": {
+        "very_mild": "Very mild",
+        "mild": "Mild",
+        "medium": "Medium",
+        "strong": "Strong",
+        "very_strong": "Very strong"
+      }
+    },
+    "brew_temperature": {
+      "options": {
+        "cold": "Cold",
+        "normal": "Normal",
+        "high": "High"
+      }
+    },
+    "bean_hopper": {
+      "options": {
+        "recipe_default": "Recipe default",
+        "hopper_1": "Hopper 1",
+        "hopper_2": "Hopper 2"
+      }
+    }
+  },
+  "services": {
+    "brew": {
+      "name": "Brew",
+      "description": "Brews a drink. Anything left unset falls back to the value staged on the machine's entities.",
+      "fields": {
+        "drink": {
+          "name": "Drink",
+          "description": "Which drink to make. Defaults to the drink selected on the machine's Drink entity."
+        },
+        "two_cups": {
+          "name": "Two cups",
+          "description": "Dispense two cups in one run."
+        },
+        "intensity": {
+          "name": "Strength",
+          "description": "Coffee strength to use instead of the stored recipe value."
+        },
+        "temperature": {
+          "name": "Brew temperature",
+          "description": "Brew temperature to use instead of the stored recipe value."
+        },
+        "portion_ml": {
+          "name": "Cup size",
+          "description": "Cup size in millilitres, rounded to the nearest 5 ml."
+        },
+        "bean_hopper": {
+          "name": "Bean hopper",
+          "description": "Which bean hopper to grind from. Only dual-hopper machines act on this."
+        }
+      }
+    },
+    "cancel": {
+      "name": "Cancel",
+      "description": "Stops whatever the machine is currently doing."
+    },
+    "set_clock": {
+      "name": "Set clock",
+      "description": "Sets the clock shown on the machine.",
+      "fields": {
+        "time": {
+          "name": "Time",
+          "description": "Time to set. Defaults to the current local time."
+        }
+      }
+    },
+    "write_setting": {
+      "name": "Write setting register",
+      "description": "Writes a raw numerical register on the machine. Intended for exploring undocumented settings — a wrong value can put the machine into an unexpected state.",
+      "fields": {
+        "setting_id": {
+          "name": "Register",
+          "description": "Register ID, for example 11 for water hardness or 13 for the auto-off delay."
+        },
+        "value": {
+          "name": "Value",
+          "description": "Value to write."
+        }
+      }
+    },
+    "read_setting": {
+      "name": "Read setting register",
+      "description": "Reads a raw numerical register from the machine and returns its value.",
+      "fields": {
+        "setting_id": {
+          "name": "Register",
+          "description": "Register ID to read."
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "not_connected": {
+      "message": "The coffee machine is not reachable over Bluetooth."
+    }
+  }
+}

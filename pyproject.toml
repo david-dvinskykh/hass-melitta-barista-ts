@@ -1,0 +1,32 @@
+[project]
+name = "hass-melitta-barista-ts"
+version = "0.1.0"
+description = "Home Assistant integration for Melitta Barista T/TS Smart coffee machines over Bluetooth LE"
+readme = "README.md"
+requires-python = ">=3.12"
+license = { file = "LICENSE" }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+addopts = "-q"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "D", "SIM", "RUF"]
+# D401 rejects "True when …" docstrings on boolean helpers, which read
+# better than an imperative rephrasing. RUF012 wants ClassVar on the
+# _attr_options lists Home Assistant entities declare as plain attributes.
+ignore = ["D203", "D213", "D401", "RUF012"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["D100", "D101", "D102", "D103", "D104", "D107"]
+# dbus-fast derives D-Bus signatures from the annotations, so the method
+# names and string annotations here are fixed by BlueZ, not by style.
+"custom_components/melitta_barista_ts/pairing.py" = ["N802", "ARG002", "UP037"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "pep257"

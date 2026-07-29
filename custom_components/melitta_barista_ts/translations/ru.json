@@ -1,0 +1,302 @@
+{
+  "config": {
+    "flow_title": "{name} ({address})",
+    "step": {
+      "confirm": {
+        "title": "Добавить кофемашину",
+        "description": "Настроить {name} по адресу {address}?\n\nКофемашина должна быть включена, а Bluetooth — активирован в её меню. Первое подключение может занять некоторое время, пока устройства выполняют сопряжение."
+      },
+      "user": {
+        "title": "Добавить кофемашину",
+        "data": {
+          "address": "Кофемашина"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "Эта кофемашина уже настроена",
+      "no_devices_found": "Кофемашина Melitta Barista Smart не найдена. Включите её, активируйте Bluetooth в меню и убедитесь, что она находится в зоне действия Bluetooth-адаптера или прокси.",
+      "not_supported": "Это Bluetooth-устройство не является кофемашиной Melitta Barista Smart"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Параметры подключения",
+        "data": {
+          "poll_interval": "Интервал опроса состояния",
+          "frame_timeout": "Таймаут команды",
+          "connect_timeout": "Таймаут подключения",
+          "pairing_agent": "Регистрировать агент сопряжения Bluetooth"
+        },
+        "data_description": {
+          "poll_interval": "Как часто обновляется состояние кофемашины.",
+          "frame_timeout": "Сколько ждать ответа кофемашины на команду.",
+          "connect_timeout": "Сколько ждать установления Bluetooth-соединения.",
+          "pairing_agent": "Кофемашина использует сопряжение с числовым подтверждением, которое стандартный агент BlueZ подтвердить не может. Оставьте включённым, если не выполняете сопряжение через ESPHome Bluetooth-прокси или вручную."
+        }
+      }
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "brewing": { "name": "Приготовление" },
+      "maintenance": { "name": "Обслуживание" },
+      "water_tank_empty": { "name": "Бак для воды пуст" },
+      "trays_full": { "name": "Поддоны переполнены" },
+      "trays_missing": { "name": "Поддоны не установлены" },
+      "brew_unit_removed": { "name": "Заварочный блок снят" },
+      "powder_lid_open": { "name": "Крышка отсека для молотого кофе открыта" },
+      "beans_empty_hopper_1": { "name": "Контейнер для зёрен 1 пуст" },
+      "beans_empty_hopper_2": { "name": "Контейнер для зёрен 2 пуст" },
+      "easy_clean_required": { "name": "Требуется Easy Clean" }
+    },
+    "button": {
+      "brew": { "name": "Приготовить" },
+      "cancel": { "name": "Отменить" },
+      "sync_clock": { "name": "Синхронизировать часы" }
+    },
+    "number": {
+      "portion": { "name": "Объём порции" },
+      "auto_off_after": { "name": "Автовыключение через" }
+    },
+    "select": {
+      "drink": {
+        "name": "Напиток",
+        "state": {
+          "espresso": "Эспрессо",
+          "ristretto": "Ристретто",
+          "lungo": "Лунго",
+          "espresso_doppio": "Эспрессо доппио",
+          "ristretto_doppio": "Ристретто доппио",
+          "cafe_creme": "Кафе-крема",
+          "cafe_creme_doppio": "Кафе-крема доппио",
+          "americano": "Американо",
+          "americano_extra": "Американо экстра",
+          "long_black": "Лонг-блэк",
+          "red_eye": "Ред-ай",
+          "black_eye": "Блэк-ай",
+          "dead_eye": "Дэд-ай",
+          "cappuccino": "Капучино",
+          "espresso_macchiato": "Эспрессо макиато",
+          "caffe_latte": "Кафе-латте",
+          "cafe_au_lait": "Кафе-о-ле",
+          "flat_white": "Флэт-уайт",
+          "latte_macchiato": "Латте макиато",
+          "latte_macchiato_extra": "Латте макиато экстра",
+          "latte_macchiato_triple": "Латте макиато тройной",
+          "milk": "Молоко",
+          "milk_froth": "Молочная пена",
+          "hot_water": "Горячая вода"
+        }
+      },
+      "intensity": {
+        "name": "Крепость",
+        "state": {
+          "very_mild": "Очень мягкий",
+          "mild": "Мягкий",
+          "medium": "Средний",
+          "strong": "Крепкий",
+          "very_strong": "Очень крепкий"
+        }
+      },
+      "brew_temperature": {
+        "name": "Температура заваривания",
+        "state": {
+          "cold": "Холодная",
+          "normal": "Обычная",
+          "high": "Высокая"
+        }
+      },
+      "bean_hopper": {
+        "name": "Контейнер для зёрен",
+        "state": {
+          "recipe_default": "Как в рецепте",
+          "hopper_1": "Контейнер 1",
+          "hopper_2": "Контейнер 2"
+        }
+      }
+    },
+    "sensor": {
+      "status": {
+        "name": "Состояние",
+        "state": {
+          "ready": "Готова",
+          "brewing": "Приготовление",
+          "cleaning": "Очистка",
+          "descaling": "Удаление накипи",
+          "filter_insert": "Установите фильтр",
+          "filter_replace": "Замените фильтр",
+          "filter_remove": "Извлеките фильтр",
+          "switching_off": "Выключение",
+          "easy_clean": "Easy Clean",
+          "intensive_clean": "Интенсивная очистка",
+          "evaporating": "Выпаривание",
+          "busy": "Занята",
+          "unknown_state": "Неизвестно"
+        }
+      },
+      "sub_status": {
+        "name": "Этап",
+        "state": {
+          "idle": "Ожидание",
+          "grinding": "Помол",
+          "extracting": "Экстракция",
+          "steaming": "Взбивание молока",
+          "dispensing_water": "Подача воды",
+          "preparing": "Подготовка",
+          "unknown_state": "Неизвестно"
+        }
+      },
+      "attention": {
+        "name": "Требуется действие",
+        "state": {
+          "none": "Ничего",
+          "brew_unit_removed": "Заварочный блок снят",
+          "trays_missing": "Поддоны не установлены",
+          "empty_trays": "Опорожните поддоны",
+          "fill_water": "Наполните бак для воды",
+          "close_powder_lid": "Закройте крышку отсека для молотого кофе",
+          "fill_powder": "Засыпьте молотый кофе",
+          "unknown_state": "Неизвестно"
+        }
+      },
+      "progress": { "name": "Прогресс" },
+      "total_cups": { "name": "Всего напитков" },
+      "clock": { "name": "Часы кофемашины" },
+      "firmware": { "name": "Прошивка" },
+      "drink_cups": { "name": "{drink}: количество" }
+    },
+    "switch": {
+      "two_cups": { "name": "Две чашки" }
+    }
+  },
+  "selector": {
+    "drink": {
+      "options": {
+        "espresso": "Эспрессо",
+        "ristretto": "Ристретто",
+        "lungo": "Лунго",
+        "espresso_doppio": "Эспрессо доппио",
+        "ristretto_doppio": "Ристретто доппио",
+        "cafe_creme": "Кафе-крема",
+        "cafe_creme_doppio": "Кафе-крема доппио",
+        "americano": "Американо",
+        "americano_extra": "Американо экстра",
+        "long_black": "Лонг-блэк",
+        "red_eye": "Ред-ай",
+        "black_eye": "Блэк-ай",
+        "dead_eye": "Дэд-ай",
+        "cappuccino": "Капучино",
+        "espresso_macchiato": "Эспрессо макиато",
+        "caffe_latte": "Кафе-латте",
+        "cafe_au_lait": "Кафе-о-ле",
+        "flat_white": "Флэт-уайт",
+        "latte_macchiato": "Латте макиато",
+        "latte_macchiato_extra": "Латте макиато экстра",
+        "latte_macchiato_triple": "Латте макиато тройной",
+        "milk": "Молоко",
+        "milk_froth": "Молочная пена",
+        "hot_water": "Горячая вода"
+      }
+    },
+    "intensity": {
+      "options": {
+        "very_mild": "Очень мягкий",
+        "mild": "Мягкий",
+        "medium": "Средний",
+        "strong": "Крепкий",
+        "very_strong": "Очень крепкий"
+      }
+    },
+    "brew_temperature": {
+      "options": {
+        "cold": "Холодная",
+        "normal": "Обычная",
+        "high": "Высокая"
+      }
+    },
+    "bean_hopper": {
+      "options": {
+        "recipe_default": "Как в рецепте",
+        "hopper_1": "Контейнер 1",
+        "hopper_2": "Контейнер 2"
+      }
+    }
+  },
+  "services": {
+    "brew": {
+      "name": "Приготовить",
+      "description": "Готовит напиток. Незаданные параметры берутся из соответствующих сущностей кофемашины.",
+      "fields": {
+        "drink": {
+          "name": "Напиток",
+          "description": "Какой напиток приготовить. По умолчанию — выбранный в сущности «Напиток»."
+        },
+        "two_cups": {
+          "name": "Две чашки",
+          "description": "Приготовить две чашки за один цикл."
+        },
+        "intensity": {
+          "name": "Крепость",
+          "description": "Крепость вместо значения из сохранённого рецепта."
+        },
+        "temperature": {
+          "name": "Температура заваривания",
+          "description": "Температура вместо значения из сохранённого рецепта."
+        },
+        "portion_ml": {
+          "name": "Объём порции",
+          "description": "Объём в миллилитрах, округляется до 5 мл."
+        },
+        "bean_hopper": {
+          "name": "Контейнер для зёрен",
+          "description": "Из какого контейнера молоть зёрна. Учитывается только машинами с двумя контейнерами."
+        }
+      }
+    },
+    "cancel": {
+      "name": "Отменить",
+      "description": "Останавливает текущую операцию кофемашины."
+    },
+    "set_clock": {
+      "name": "Установить часы",
+      "description": "Устанавливает время на дисплее кофемашины.",
+      "fields": {
+        "time": {
+          "name": "Время",
+          "description": "Устанавливаемое время. По умолчанию — текущее местное время."
+        }
+      }
+    },
+    "write_setting": {
+      "name": "Записать регистр настройки",
+      "description": "Записывает произвольный числовой регистр кофемашины. Предназначено для исследования недокументированных настроек — неверное значение может привести к непредсказуемому поведению.",
+      "fields": {
+        "setting_id": {
+          "name": "Регистр",
+          "description": "Идентификатор регистра, например 11 — жёсткость воды, 13 — задержка автовыключения."
+        },
+        "value": {
+          "name": "Значение",
+          "description": "Записываемое значение."
+        }
+      }
+    },
+    "read_setting": {
+      "name": "Прочитать регистр настройки",
+      "description": "Читает произвольный числовой регистр кофемашины и возвращает его значение.",
+      "fields": {
+        "setting_id": {
+          "name": "Регистр",
+          "description": "Идентификатор читаемого регистра."
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "not_connected": {
+      "message": "Кофемашина недоступна по Bluetooth."
+    }
+  }
+}

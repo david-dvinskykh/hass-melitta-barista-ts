@@ -1,0 +1,131 @@
+brew:
+  target:
+    device:
+      integration: melitta_barista_ts
+  fields:
+    drink:
+      required: false
+      example: cappuccino
+      selector:
+        select:
+          translation_key: drink
+          options:
+            - espresso
+            - ristretto
+            - lungo
+            - espresso_doppio
+            - ristretto_doppio
+            - cafe_creme
+            - cafe_creme_doppio
+            - americano
+            - americano_extra
+            - long_black
+            - red_eye
+            - black_eye
+            - dead_eye
+            - cappuccino
+            - espresso_macchiato
+            - caffe_latte
+            - cafe_au_lait
+            - flat_white
+            - latte_macchiato
+            - latte_macchiato_extra
+            - latte_macchiato_triple
+            - milk
+            - milk_froth
+            - hot_water
+    two_cups:
+      required: false
+      selector:
+        boolean:
+    intensity:
+      required: false
+      selector:
+        select:
+          translation_key: intensity
+          options:
+            - very_mild
+            - mild
+            - medium
+            - strong
+            - very_strong
+    temperature:
+      required: false
+      selector:
+        select:
+          translation_key: brew_temperature
+          options:
+            - cold
+            - normal
+            - high
+    portion_ml:
+      required: false
+      example: 120
+      selector:
+        number:
+          min: 5
+          max: 400
+          step: 5
+          unit_of_measurement: mL
+          mode: box
+    bean_hopper:
+      required: false
+      selector:
+        select:
+          translation_key: bean_hopper
+          options:
+            - recipe_default
+            - hopper_1
+            - hopper_2
+
+cancel:
+  target:
+    device:
+      integration: melitta_barista_ts
+
+set_clock:
+  target:
+    device:
+      integration: melitta_barista_ts
+  fields:
+    time:
+      required: false
+      example: "07:30:00"
+      selector:
+        time:
+
+write_setting:
+  target:
+    device:
+      integration: melitta_barista_ts
+  fields:
+    setting_id:
+      required: true
+      example: 13
+      selector:
+        number:
+          min: 0
+          max: 32767
+          mode: box
+    value:
+      required: true
+      example: 30
+      selector:
+        number:
+          min: -2147483648
+          max: 2147483647
+          mode: box
+
+read_setting:
+  target:
+    device:
+      integration: melitta_barista_ts
+  fields:
+    setting_id:
+      required: true
+      example: 11
+      selector:
+        number:
+          min: 0
+          max: 32767
+          mode: box
