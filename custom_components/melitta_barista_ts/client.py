@@ -9,8 +9,10 @@ the next status.
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
 from collections.abc import Callable
+from typing import Final
 
 from bleak import BleakClient, BleakError
 from bleak.backends.device import BLEDevice
@@ -60,7 +62,6 @@ class MelittaBleClient:
         self._notify_chars: list[str] = []
         self._connect_lock = asyncio.Lock()
         self._closing = False
-        self._bonded = False
         self.machine = MelittaMachine(self._write, frame_timeout=frame_timeout)
 
     # -- state -----------------------------------------------------------
@@ -90,7 +91,10 @@ class MelittaBleClient:
         The machine bonds with Numeric Comparison, so a first connection has
         to request pairing. Bonding is expensive and only needed once, so this
         tries the cheap unbonded path first and escalates only when the
-        session does not come up — mirroring what the vendor app does.
+        session does not come up — mirroring what the vendor app does. An
+        existing bond makes that first attempt the fast one: the link comes up
+        unencrypted and the machine asks for encryption itself, using the key
+        both sides already hold.
         """
         if self.connected:
             return
@@ -109,15 +113,19 @@ class MelittaBleClient:
             if self._use_pairing_agent:
                 await async_ensure_agent()
 
-            # Once bonded, skip straight to the fast path on every reconnect.
-            attempts = (True,) if self._bonded else (False, True)
+            # A third rung is appended below when bonding is refused.
+            attempts = [False, True]
+            bond_cleared = False
             last_error: Exception | None = None
+            first = True
 
-            for index, pair in enumerate(attempts):
-                if index:
+            while attempts:
+                pair = attempts.pop(0)
+                if not first:
                     # Let the adapter or proxy release the previous connection
                     # slot before asking for a bond on a fresh one.
                     await asyncio.sleep(PAIR_SETTLE_DELAY)
+                first = False
                 try:
                     await self._async_open_session(device, pair=pair)
                 except (MelittaConnectionError, MachineError, BleakError) as err:
@@ -129,18 +137,61 @@ class MelittaBleClient:
                     )
                     last_error = err
                     await self._async_disconnect_locked()
+                    if pair and not bond_cleared and _is_pairing_refused(err):
+                        bond_cleared = True
+                        await self._async_clear_bond(device)
+                        attempts.append(True)
                     continue
 
-                self._bonded = True
                 _LOGGER.debug(
                     "Session established with %s (pair=%s)", device.address, pair
                 )
                 return
 
-            self._bonded = False
             raise MelittaConnectionError(
                 f"could not establish a session with {self._name}: {last_error}"
             )
+
+    async def _async_clear_bond(self, device: BLEDevice) -> None:
+        """Forget the bond this side holds, so the next attempt pairs afresh.
+
+        A machine that has been reset — or bonded with a phone since — no
+        longer holds the key the adapter or proxy kept, and every pairing
+        attempt from then on is refused. Only the local half of the bond can
+        be dropped from here, but that is the half that is stale.
+
+        Best effort throughout: an unreachable machine, or a proxy whose
+        firmware was built without the unpair support, leaves the bond in
+        place and the caller simply fails as it would have anyway.
+        """
+        _LOGGER.info("Clearing the stale bond for %s", device.address)
+        try:
+            async with asyncio.timeout(self._connect_timeout):
+                client = await establish_connection(
+                    BleakClient,
+                    device,
+                    self._name,
+                    max_attempts=CONNECT_ATTEMPTS,
+                    pair=False,
+                )
+        except (BleakError, TimeoutError, OSError) as err:
+            _LOGGER.debug("Could not connect to clear the bond: %s", err)
+            return
+
+        try:
+            await client.unpair()
+            _LOGGER.info("Dropped the bond for %s", device.address)
+        except (BleakError, OSError, NotImplementedError, AttributeError) as err:
+            _LOGGER.warning(
+                "Could not drop the bond for %s (%s). If pairing keeps being "
+                "refused, forget the machine on the Bluetooth adapter — or on "
+                "the ESPHome proxy — and try again",
+                device.address,
+                err,
+            )
+        finally:
+            with contextlib.suppress(BleakError, OSError, TimeoutError):
+                await client.disconnect()
 
     async def _async_open_session(self, device: BLEDevice, *, pair: bool) -> None:
         """Connect, subscribe and handshake, or raise.
@@ -316,6 +367,29 @@ def _scanner_source(device: BLEDevice) -> str:
             if len(parts) > 3 and parts[3]:
                 return parts[3]
     return "unknown adapter"
+
+
+_PAIRING_REFUSED_MARKERS: Final = (
+    # bleak-esphome, when the proxy reports an SMP failure of its own
+    "pairing failed",
+    # BlueZ, via org.bluez.Error.AuthenticationFailed / -Rejected
+    "authentication failed",
+    "authenticationfailed",
+    "authentication rejected",
+    "authenticationrejected",
+)
+
+
+def _is_pairing_refused(err: Exception) -> bool:
+    """True when bonding was refused rather than simply unreachable.
+
+    Worth telling apart: a refusal points at a bond one side no longer
+    honours, which dropping it can fix, while a timeout only means the radio
+    could not reach the machine — clearing a perfectly good bond over that
+    would force a fresh Numeric Comparison for nothing.
+    """
+    text = str(err).lower()
+    return any(marker in text for marker in _PAIRING_REFUSED_MARKERS)
 
 
 def _notify_chars(client: BleakClient) -> list[str]:

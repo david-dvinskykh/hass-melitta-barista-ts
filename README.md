@@ -214,6 +214,14 @@ address once bonded.
 confirmation. Leave the pairing-agent option on, or pair manually with
 `bluetoothctl` as shown above.
 
+**"Pairing failed due to error: 102", or the log shows the bond being
+cleared.** The adapter or proxy still holds a bond the machine has forgotten
+— after a factory reset, or after it bonded with a phone since. The
+integration notices a refused pairing, drops its own half of the bond and
+pairs again, which takes one extra connect attempt. If pairing keeps being
+refused, the other half is stale too: forget the machine in its Bluetooth
+menu, or clear the bond table on the ESPHome proxy, then reconnect.
+
 **Connects, then every frame reports a checksum mismatch.** The handshake
 produced a bad session key. The integration rejects mismatched handshakes and
 retries, so this usually clears on the next poll — if it does not, delete the
