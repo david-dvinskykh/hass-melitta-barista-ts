@@ -517,7 +517,30 @@ def user_profile_count(machine_type: MachineType | None) -> int:
 
 #: Per-drink cup counters live at ``CUP_COUNTER_BASE_ID + recipe_type``.
 CUP_COUNTER_BASE_ID: Final = 100
+#: Counts every dispense including hot water, so it runs ahead of the total
+#: the machine's own statistics screen shows.
 TOTAL_CUPS_ID: Final = 150
+
+
+class CareProgramme(IntEnum):
+    """How many times each care programme has been run.
+
+    Read off a Barista TS Smart and matched one by one against the numbers
+    on its own Statistics → Care screen.
+    """
+
+    COFFEE_SYSTEM_CLEANING = 161
+    DESCALING = 162
+    FILTER_CHANGE = 163
+    MILK_SYSTEM_CLEANING = 164
+
+
+CARE_SLUGS: Final[dict[CareProgramme, str]] = {
+    CareProgramme.MILK_SYSTEM_CLEANING: "milk_system_cleanings",
+    CareProgramme.COFFEE_SYSTEM_CLEANING: "coffee_system_cleanings",
+    CareProgramme.DESCALING: "descalings",
+    CareProgramme.FILTER_CHANGE: "filter_changes",
+}
 
 AUTO_OFF_MIN_MINUTES: Final = 5
 AUTO_OFF_MAX_MINUTES: Final = 480

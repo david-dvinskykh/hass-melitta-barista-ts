@@ -86,6 +86,18 @@
       },
       "drink_cups": {
         "default": "mdi:coffee"
+      },
+      "milk_system_cleanings": {
+        "default": "mdi:cup-water"
+      },
+      "coffee_system_cleanings": {
+        "default": "mdi:coffee-maker"
+      },
+      "descalings": {
+        "default": "mdi:water-percent"
+      },
+      "filter_changes": {
+        "default": "mdi:air-filter"
       }
     },
     "button": {

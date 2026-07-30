@@ -244,6 +244,18 @@
       },
       "drink_cups": {
         "name": "{drink} count"
+      },
+      "milk_system_cleanings": {
+        "name": "Milk system cleanings"
+      },
+      "coffee_system_cleanings": {
+        "name": "Coffee system cleanings"
+      },
+      "descalings": {
+        "name": "Descalings"
+      },
+      "filter_changes": {
+        "name": "Filter changes"
       }
     },
     "switch": {

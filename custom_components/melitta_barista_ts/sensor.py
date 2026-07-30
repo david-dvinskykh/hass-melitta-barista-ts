@@ -17,7 +17,9 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import (
+    CARE_SLUGS,
     RECIPE_DISPLAY_NAMES,
+    CareProgramme,
     MachineProcess,
     Manipulation,
     RecipeId,
@@ -149,6 +151,25 @@ SENSORS: Final[tuple[MelittaSensorDescription, ...]] = (
     ),
 )
 
+
+def _care_count(programme: CareProgramme) -> Callable[[MelittaData], int | None]:
+    """Read one care tally out of the polled data."""
+    return lambda data: data.care_counts.get(programme)
+
+
+#: How many times the machine has run each care programme — the same tallies
+#: its own Statistics → Care screen shows. They say what has been done, not
+#: what is due: the machine asks for the next one on its display.
+CARE_SENSORS: Final[tuple[MelittaSensorDescription, ...]] = tuple(
+    MelittaSensorDescription(
+        key=slug,
+        translation_key=slug,
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        value_fn=_care_count(programme),
+    )
+    for programme, slug in CARE_SLUGS.items()
+)
+
 #: Per-drink counters live at ``recipe_id - 200`` in the counter block.
 _COUNTER_RECIPES: Final[tuple[RecipeId, ...]] = tuple(RecipeId)
 
@@ -161,7 +182,8 @@ async def async_setup_entry(
     """Set up the sensor entities."""
     coordinator = entry.runtime_data
     entities: list[SensorEntity] = [
-        MelittaSensor(coordinator, description) for description in SENSORS
+        MelittaSensor(coordinator, description)
+        for description in (*SENSORS, *CARE_SENSORS)
     ]
     entities.extend(
         MelittaCupCounter(coordinator, recipe) for recipe in _COUNTER_RECIPES

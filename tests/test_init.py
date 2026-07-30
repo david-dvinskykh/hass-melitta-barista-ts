@@ -16,6 +16,7 @@ from custom_components.melitta_barista_ts.const import (
     DOMAIN,
     SERVICE_BREW,
     SERVICE_CANCEL,
+    CareProgramme,
     DirectKeyCategory,
     Intensity,
     MachineType,
@@ -585,3 +586,29 @@ async def test_direct_key_button_follows_the_selected_profile(
 
     args, _ = client.machine.brew.await_args
     assert args[0] == directkey_recipe_id(1, DirectKeyCategory.ESPRESSO)
+
+
+async def test_care_tallies_reach_their_sensors(hass: HomeAssistant, config_entry):
+    """Each care tally comes from its own register, none from a neighbour's."""
+    care = {
+        CareProgramme.COFFEE_SYSTEM_CLEANING: 25,
+        CareProgramme.DESCALING: 24,
+        CareProgramme.FILTER_CHANGE: 1,
+        CareProgramme.MILK_SYSTEM_CLEANING: 40,
+    }
+
+    async def _read_numerical(value_id: int) -> int:
+        return care.get(value_id, 7)
+
+    client = _make_client()
+    client.machine.read_numerical = AsyncMock(side_effect=_read_numerical)
+    await _setup(hass, config_entry, client)
+    await _poll_again(hass, config_entry)
+
+    machine_name = "melitta_barista_ts_smart"
+    assert (
+        hass.states.get(f"sensor.{machine_name}_coffee_system_cleanings").state == "25"
+    )
+    assert hass.states.get(f"sensor.{machine_name}_descalings").state == "24"
+    assert hass.states.get(f"sensor.{machine_name}_filter_changes").state == "1"
+    assert hass.states.get(f"sensor.{machine_name}_milk_system_cleanings").state == "40"

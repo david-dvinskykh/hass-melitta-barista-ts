@@ -96,7 +96,7 @@ def test_every_entity_and_service_has_an_icon() -> None:
 def test_every_entity_translation_key_is_declared() -> None:
     """No platform references a translation key strings.json does not define."""
     declared_sensors = set(STRINGS["entity"]["sensor"])
-    for description in sensor.SENSORS:
+    for description in (*sensor.SENSORS, *sensor.CARE_SENSORS):
         assert description.translation_key in declared_sensors
 
     declared_binary = set(STRINGS["entity"]["binary_sensor"])

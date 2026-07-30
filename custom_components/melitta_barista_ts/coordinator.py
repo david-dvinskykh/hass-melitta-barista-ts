@@ -26,6 +26,7 @@ from .const import (
     TS_ONLY_RECIPES,
     Blend,
     BrewTemperature,
+    CareProgramme,
     DirectKeyCategory,
     Intensity,
     MachineType,
@@ -84,6 +85,7 @@ class MelittaData:
     total_cups: int | None = None
     cup_counters: dict[int, int] = field(default_factory=dict)
     clock_minutes: int | None = None
+    care_counts: dict[CareProgramme, int] = field(default_factory=dict)
     auto_off_after: int | None = None
     water_hardness: int | None = None
     profile_names: dict[int, str] = field(default_factory=dict)
@@ -192,6 +194,13 @@ class MelittaCoordinator(DataUpdateCoordinator[MelittaData]):
         data.clock_minutes = await self._safe_read_numerical(SettingId.CLOCK)
         data.auto_off_after = await self._safe_read_numerical(SettingId.AUTO_OFF_AFTER)
         data.water_hardness = await self._safe_read_numerical(SettingId.WATER_HARDNESS)
+        # Care tallies only move when a care programme is run, which happens
+        # at the machine rather than through us — so they ride along with the
+        # other slow registers instead of having a poll of their own.
+        for programme in CareProgramme:
+            value = await self._safe_read_numerical(programme)
+            if value is not None:
+                data.care_counts[programme] = value
         await self._async_refresh_profiles(data)
 
     async def _async_refresh_counters(self, data: MelittaData) -> None:

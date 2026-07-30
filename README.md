@@ -15,7 +15,10 @@ Melitta Connect app uses. No cloud, no account, no vendor app.
   hopper and two-cup mode per brew.
 - **Reports** live status: process, current step, progress, and what the
   machine is waiting for (water, trays, brew unit, beans, Easy Clean).
-- **Counts** drinks — total and per drink type.
+- **Counts** drinks — total and per drink type — and how many times each care
+  programme has been run: milk system cleaning, coffee system cleaning,
+  descaling and filter change, the same tallies the machine's own
+  Statistics → Care screen shows.
 - **Adjusts** the auto-off delay and syncs the machine clock.
 
 Everything runs locally over BLE. A machine that is switched off is simply

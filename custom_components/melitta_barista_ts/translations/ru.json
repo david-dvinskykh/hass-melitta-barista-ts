@@ -244,6 +244,18 @@
       },
       "drink_cups": {
         "name": "{drink}: количество"
+      },
+      "milk_system_cleanings": {
+        "name": "Очистка молочной системы"
+      },
+      "coffee_system_cleanings": {
+        "name": "Очистка кофейной системы"
+      },
+      "descalings": {
+        "name": "Удаление накипи"
+      },
+      "filter_changes": {
+        "name": "Замена фильтра"
       }
     },
     "switch": {

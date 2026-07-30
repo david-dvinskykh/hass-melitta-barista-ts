@@ -334,11 +334,38 @@ that was never named reads back as the machine's placeholder — literally
 | 22 | temperature |
 | 91 | filter |
 | 100 + recipe_type | per-drink cup counter |
-| 150 | total cup counter |
+| 150 | total dispense counter, hot water included |
+| 151 | hot water dispenses |
+| 152, 153, 154, 155 | statistics, meaning not established |
+| 160 | rinse cycles (assumed) |
+| 161 | coffee system cleanings |
+| 162 | descalings |
+| 163 | filter changes |
+| 164 | milk system cleanings |
+| 170–175 | statistics, meaning not established |
 
 Value encodings for registers 12, 14, 15, 16, 18, 22 and 91 have not been
 confirmed, which is why the integration exposes them only through the raw
 `read_setting` / `write_setting` services rather than as entities.
+
+Registers 161–164 were matched one by one against the machine's own
+Statistics → Care screen, which showed exactly their values. They count
+programmes **already run**; the progress bars the same screen draws next to
+them — the machine's own "this is due now" signal — have not been located in
+any register yet.
+
+Register 150 runs ahead of the total the machine displays by exactly the hot
+water count: a machine showing 5406 drinks and 59 hot water dispenses reads
+5465 here.
+
+The block ends at 175 — 176 and up answer nothing — and 156 to 159 and 165 to
+169 are unassigned. Use the `scan_settings` service to look for more; a read
+of an unassigned register is answered with silence, not a refusal.
+
+Answers are keyed by command, not by register, so an answer arriving after
+its own read timed out is picked up by the next read. Check the register id
+in every response and repeat the read when it does not match, or a scan will
+report each register's value one place too late.
 
 ## Confidence
 
@@ -349,7 +376,8 @@ brew sequence, recipe/counter IDs.
 Confirmed on a Barista TS Smart running firmware `02590029014`: the
 characteristic table above, that bonding is required, that writes take a
 response, the status and recipe layouts, the numerical registers listed
-above, and the direct-key and profile-name formulas.
+above, the care tallies at 161-164 against the machine's own screen, and the
+direct-key and profile-name formulas.
 
 The `temperature` byte is a low/medium/high scale, not cold/normal/hot: a
 stock profile espresso reads back as `0` on a machine that cannot brew cold
