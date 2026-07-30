@@ -150,6 +150,12 @@ class MelittaBleClient:
         config entry setup cancelled. The bound below is what keeps a failed
         connect cheap.
         """
+        _LOGGER.debug(
+            "Connecting to %s via %s (pair=%s)",
+            device.address,
+            _scanner_source(device),
+            pair,
+        )
         try:
             async with asyncio.timeout(self._connect_timeout):
                 client = await establish_connection(
@@ -160,7 +166,16 @@ class MelittaBleClient:
                     max_attempts=CONNECT_ATTEMPTS,
                     pair=pair,
                 )
-        except (BleakError, TimeoutError) as err:
+        except TimeoutError as err:
+            # A bare TimeoutError carries no message, and cutting the library
+            # off mid-retry also discards whatever it was about to report — so
+            # say what timed out and where, or the log line reads as an
+            # unexplained blank failure.
+            raise MelittaConnectionError(
+                f"connect via {_scanner_source(device)} timed out after "
+                f"{self._connect_timeout:g}s"
+            ) from err
+        except BleakError as err:
             raise MelittaConnectionError(f"could not connect: {err}") from err
 
         self._client = client
@@ -171,6 +186,10 @@ class MelittaBleClient:
                 await self.machine.handshake()
         except MachineError:
             raise
+        except TimeoutError as err:
+            raise MelittaConnectionError(
+                f"handshake timed out after {self._connect_timeout:g}s"
+            ) from err
         except Exception as err:
             raise MelittaConnectionError(f"session setup failed: {err}") from err
 
@@ -229,6 +248,21 @@ class MelittaBleClient:
         except (BleakError, TimeoutError) as err:
             await self.async_disconnect()
             raise MelittaConnectionError(f"transport error: {err}") from err
+
+
+def _scanner_source(device: BLEDevice) -> str:
+    """Name the adapter or proxy the device was last heard on.
+
+    Home Assistant picks the scanner with the strongest signal, which is not
+    always the one that can hold a connection — a proxy can hear the machine
+    fine and still fail to establish GATT. Naming it makes that visible.
+    """
+    details = getattr(device, "details", None)
+    if isinstance(details, dict):
+        source = details.get("source")
+        if source:
+            return str(source)
+    return "unknown adapter"
 
 
 def _resolve_write_char(client: BleakClient) -> str:
