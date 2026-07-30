@@ -11,6 +11,7 @@ from bleak import BleakError
 from custom_components.melitta_barista_ts.client import (
     MelittaBleClient,
     MelittaConnectionError,
+    _notify_chars,
     _scanner_source,
     _write_char_candidates,
 )
@@ -29,10 +30,16 @@ def _char(uuid: str, *properties: str) -> MagicMock:
     return char
 
 
+NOTIFY_CHAR = "0000ad02-b35c-11e4-9813-0002a5d5c51b"
+
+
 def _fake_gatt_client(*chars: MagicMock) -> MagicMock:
     """A BleakClient stand-in exposing the vendor service."""
     service = MagicMock()
-    service.characteristics = list(chars) or [_char(WRITE_CHAR)]
+    service.characteristics = list(chars) or [
+        _char(WRITE_CHAR, "write"),
+        _char(NOTIFY_CHAR, "notify"),
+    ]
 
     client = MagicMock()
     client.is_connected = True
@@ -201,10 +208,11 @@ def test_write_char_candidates_are_ordered_by_preference() -> None:
         _char(other),
         _char(ALT_WRITE_CHAR),
         _char(WRITE_CHAR),
-        _char("0000ad02-b35c-11e4-9813-0002a5d5c51b", "notify"),
+        _char(NOTIFY_CHAR, "notify"),
     )
 
-    assert _write_char_candidates(client) == [WRITE_CHAR, ALT_WRITE_CHAR, other]
+    uuids = [char.uuid for char in _write_char_candidates(client)]
+    assert uuids == [WRITE_CHAR, ALT_WRITE_CHAR, other]
 
 
 async def test_handshake_falls_back_to_the_other_write_characteristic() -> None:
@@ -213,13 +221,17 @@ async def test_handshake_falls_back_to_the_other_write_characteristic() -> None:
     The machine accepts the write, answers nothing and drops the link, so the
     only way to tell the characteristics apart is to see which one replies.
     """
-    gatt = _fake_gatt_client(_char(WRITE_CHAR), _char(ALT_WRITE_CHAR))
+    gatt = _fake_gatt_client(
+        _char(WRITE_CHAR, "write"),
+        _char(ALT_WRITE_CHAR, "write"),
+        _char(NOTIFY_CHAR, "notify"),
+    )
     client = _make_client()
     attempts = []
 
     async def _handshake() -> None:
-        attempts.append(client._write_char)
-        if client._write_char == WRITE_CHAR:
+        attempts.append(client._write_char.uuid)
+        if client._write_char.uuid == WRITE_CHAR:
             raise CommandTimeout("no response to HU")
         client.machine._key_prefix = b"\x11\x22"
 
@@ -230,13 +242,17 @@ async def test_handshake_falls_back_to_the_other_write_characteristic() -> None:
         await client.async_connect()
 
     assert attempts == [WRITE_CHAR, ALT_WRITE_CHAR]
-    assert client._write_char == ALT_WRITE_CHAR
+    assert client._write_char.uuid == ALT_WRITE_CHAR
     assert client.connected
 
 
 async def test_silent_characteristic_everywhere_is_reported() -> None:
     """When nothing answers, say so and name what was tried."""
-    gatt = _fake_gatt_client(_char(WRITE_CHAR), _char(ALT_WRITE_CHAR))
+    gatt = _fake_gatt_client(
+        _char(WRITE_CHAR, "write"),
+        _char(ALT_WRITE_CHAR, "write"),
+        _char(NOTIFY_CHAR, "notify"),
+    )
     client = _make_client()
 
     with (
@@ -249,3 +265,68 @@ async def test_silent_characteristic_everywhere_is_reported() -> None:
         pytest.raises(MelittaConnectionError, match="no handshake on any writable"),
     ):
         await client.async_connect()
+
+
+ALT_NOTIFY_CHAR = "0000ad06-b35c-11e4-9813-0002a5d5c51b"
+
+
+def test_every_notify_characteristic_is_collected() -> None:
+    """This firmware has a second notify channel besides the documented one."""
+    client = _fake_gatt_client(
+        _char(ALT_NOTIFY_CHAR, "notify", "read"),
+        _char(WRITE_CHAR, "write"),
+        _char(NOTIFY_CHAR, "notify"),
+    )
+
+    # The documented channel comes first; the extra one is still subscribed.
+    assert _notify_chars(client) == [NOTIFY_CHAR, ALT_NOTIFY_CHAR]
+
+
+async def test_all_notify_characteristics_are_subscribed() -> None:
+    """A reply must not be missed for arriving on the unexpected channel."""
+    gatt = _fake_gatt_client(
+        _char(WRITE_CHAR, "write"),
+        _char(NOTIFY_CHAR, "notify"),
+        _char(ALT_NOTIFY_CHAR, "notify", "read"),
+    )
+    client = _make_client()
+
+    with (
+        patch(ESTABLISH, AsyncMock(return_value=gatt)),
+        patch.object(client.machine, "handshake", AsyncMock()),
+    ):
+        await client.async_connect()
+
+    subscribed = [call.args[0] for call in gatt.start_notify.await_args_list]
+    assert subscribed == [NOTIFY_CHAR, ALT_NOTIFY_CHAR]
+
+
+@pytest.mark.parametrize(
+    ("properties", "expected_response"),
+    [
+        (("write",), True),
+        (("write", "write-without-response"), False),
+        (("write-without-response",), False),
+    ],
+)
+async def test_write_honours_the_declared_write_type(
+    properties, expected_response
+) -> None:
+    """A characteristic that only declares "write" needs a response write.
+
+    Asking for write-without-response there is not a valid GATT operation and
+    the frame never reaches the machine.
+    """
+    gatt = _fake_gatt_client(
+        _char(WRITE_CHAR, *properties), _char(NOTIFY_CHAR, "notify")
+    )
+    client = _make_client()
+
+    with (
+        patch(ESTABLISH, AsyncMock(return_value=gatt)),
+        patch.object(client.machine, "handshake", AsyncMock()),
+    ):
+        await client.async_connect()
+        await client._write(b"frame")
+
+    assert gatt.write_gatt_char.await_args.kwargs["response"] is expected_response
