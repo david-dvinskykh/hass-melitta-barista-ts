@@ -14,6 +14,7 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.melitta_barista_ts.client import MelittaConnectionError
 from custom_components.melitta_barista_ts.const import (
+    CONF_BRAND_ICON,
     DOMAIN,
     SERVICE_BREW,
     SERVICE_CANCEL,
@@ -652,3 +653,29 @@ async def test_a_machine_that_stays_away_does_go_unavailable(
         hass.states.get("sensor.melitta_barista_ts_smart_status").state
         == STATE_UNAVAILABLE
     )
+
+
+async def test_the_logo_is_served_only_when_asked_for(
+    hass: HomeAssistant, config_entry
+) -> None:
+    """Patching someone else's page is opt-in, and reversible."""
+    with patch("custom_components.melitta_barista_ts.async_serve_brand") as serve:
+        await _setup(hass, config_entry, _make_client())
+    serve.assert_not_called()
+
+    hass.config_entries.async_update_entry(
+        config_entry, options={CONF_BRAND_ICON: True}
+    )
+    with (
+        patch(BLE_DEVICE_PATH, return_value=MagicMock()),
+        patch(CLIENT_PATH, return_value=_make_client()),
+        patch("custom_components.melitta_barista_ts.async_serve_brand") as serve,
+        patch("custom_components.melitta_barista_ts.async_stop_serving_brand") as stop,
+    ):
+        await hass.config_entries.async_reload(config_entry.entry_id)
+        await hass.async_block_till_done()
+        serve.assert_awaited_once()
+
+        await hass.config_entries.async_unload(config_entry.entry_id)
+        await hass.async_block_till_done()
+        stop.assert_called_once()

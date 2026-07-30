@@ -9,12 +9,15 @@ from homeassistant.const import CONF_ADDRESS, Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 
+from .brand import async_serve_brand, async_stop_serving_brand
 from .client import MelittaBleClient, scanner_source
 from .const import (
+    CONF_BRAND_ICON,
     CONF_CONNECT_TIMEOUT,
     CONF_FRAME_TIMEOUT,
     CONF_PAIRING_AGENT,
     CONF_POLL_INTERVAL,
+    DEFAULT_BRAND_ICON,
     DEFAULT_CONNECT_TIMEOUT,
     DEFAULT_FRAME_TIMEOUT,
     DEFAULT_PAIRING_AGENT,
@@ -102,6 +105,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: MelittaConfigEntry) -> b
             bluetooth.BluetoothScanningMode.PASSIVE,
         )
     )
+
+    if options.get(CONF_BRAND_ICON, DEFAULT_BRAND_ICON):
+        await async_serve_brand(hass)
+        entry.async_on_unload(lambda: async_stop_serving_brand(hass))
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))

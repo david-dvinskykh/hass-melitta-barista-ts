@@ -23,10 +23,12 @@ from homeassistant.helpers import selector
 from .const import (
     BLE_NAME_PREFIXES,
     BLE_NAME_PREFIXES_T,
+    CONF_BRAND_ICON,
     CONF_CONNECT_TIMEOUT,
     CONF_FRAME_TIMEOUT,
     CONF_PAIRING_AGENT,
     CONF_POLL_INTERVAL,
+    DEFAULT_BRAND_ICON,
     DEFAULT_CONNECT_TIMEOUT,
     DEFAULT_FRAME_TIMEOUT,
     DEFAULT_PAIRING_AGENT,
@@ -192,6 +194,10 @@ class MelittaOptionsFlow(OptionsFlow):
                     vol.Required(
                         CONF_PAIRING_AGENT,
                         default=options.get(CONF_PAIRING_AGENT, DEFAULT_PAIRING_AGENT),
+                    ): selector.BooleanSelector(),
+                    vol.Required(
+                        CONF_BRAND_ICON,
+                        default=options.get(CONF_BRAND_ICON, DEFAULT_BRAND_ICON),
                     ): selector.BooleanSelector(),
                 }
             ),

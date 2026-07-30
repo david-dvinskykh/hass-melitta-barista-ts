@@ -555,6 +555,7 @@ CONF_POLL_INTERVAL: Final = "poll_interval"
 CONF_FRAME_TIMEOUT: Final = "frame_timeout"
 CONF_CONNECT_TIMEOUT: Final = "connect_timeout"
 CONF_PAIRING_AGENT: Final = "pairing_agent"
+CONF_BRAND_ICON: Final = "brand_icon"
 
 DEFAULT_POLL_INTERVAL: Final = 5.0
 DEFAULT_FRAME_TIMEOUT: Final = 5.0
@@ -564,6 +565,7 @@ DEFAULT_FRAME_TIMEOUT: Final = 5.0
 #: gives a config entry 300 s to set up, which the whole ladder fits inside.
 DEFAULT_CONNECT_TIMEOUT: Final = 60.0
 DEFAULT_PAIRING_AGENT: Final = True
+DEFAULT_BRAND_ICON: Final = False
 
 #: Delay the vendor app inserts between the steps of the brew sequence.
 BREW_STEP_DELAY: Final = 0.2

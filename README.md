@@ -54,13 +54,24 @@ repository or in Home Assistant's configuration can point it elsewhere.
 Until the domain is listed in the shared brands repository, the tile stays a
 puzzle piece.
 
-The artwork is ready for that in [`brand/`](brand): `icon.png` (256×256),
-`icon@2x.png` (512×512), `logo.png` and `logo@2x.png`, all trimmed and on a
-transparent background. To publish it, copy them into
+There is a way round it in the meantime: turn on **Serve the Melitta logo**
+in the integration's options. The integration then publishes its own copy of
+the artwork and asks the frontend to load a small module that swaps the image
+in the page. Reload the browser afterwards.
+
+That module patches markup Home Assistant does not promise to keep, so it is
+off by default and written to do nothing rather than risk the page — if a
+future frontend lays the tile out differently, the placeholder simply comes
+back.
+
+The permanent fix is the brands repository. The artwork is ready for it in
+[`custom_components/melitta_barista_ts/brand/`](custom_components/melitta_barista_ts/brand):
+`icon.png` (256×256), `icon@2x.png` (512×512), `logo.png` and `logo@2x.png`,
+trimmed and on transparent backgrounds. Copy them into
 `custom_integrations/melitta_barista_ts/` in a fork of
 [home-assistant/brands](https://github.com/home-assistant/brands) and open a
-pull request. Expect a manual review, and a while longer for the CDN to
-catch up.
+pull request. Expect a manual review, and a while longer for the CDN to catch
+up.
 
 ## Setup
 

@@ -27,13 +27,15 @@
           "poll_interval": "Status poll interval",
           "frame_timeout": "Command timeout",
           "connect_timeout": "Connection timeout",
-          "pairing_agent": "Register a Bluetooth pairing agent"
+          "pairing_agent": "Register a Bluetooth pairing agent",
+          "brand_icon": "Serve the Melitta logo"
         },
         "data_description": {
           "poll_interval": "How often the machine status is refreshed.",
           "frame_timeout": "How long to wait for the machine to answer a command.",
           "connect_timeout": "How long to wait for the Bluetooth connection to come up.",
-          "pairing_agent": "The machine bonds with numeric comparison, which the default BlueZ agent cannot confirm. Leave this on unless you bond through an ESPHome Bluetooth proxy or pair manually."
+          "pairing_agent": "The machine bonds with numeric comparison, which the default BlueZ agent cannot confirm. Leave this on unless you bond through an ESPHome Bluetooth proxy or pair manually.",
+          "brand_icon": "Home Assistant fetches the tile on the integrations and devices pages from its shared brands service, which does not know this integration. With this on, the integration serves the artwork itself and asks the frontend to swap it in. Reload the page after changing it."
         }
       }
     }
