@@ -1,0 +1,8 @@
+# Home Assistant test harness — pins the matching homeassistant release.
+pytest-homeassistant-custom-component>=0.13.300
+
+# Runtime dependencies of the integration.
+bleak-retry-connector>=3.5.0
+
+# Used by the protocol test that re-derives the RC4 key from the AES blob.
+cryptography>=41.0.0

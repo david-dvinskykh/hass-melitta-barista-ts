@@ -1,0 +1,363 @@
+{
+  "config": {
+    "flow_title": "{name}",
+    "step": {
+      "confirm": {
+        "title": "Добавление кофемашины",
+        "description": "Настроить {name} ({address})?\n\nКофемашина должна быть включена. Если Home Assistant подключается к ней впервые, подтвердите сопряжение на дисплее кофемашины."
+      },
+      "user": {
+        "title": "Добавление кофемашины",
+        "data": {
+          "address": "Кофемашина"
+        },
+        "data_description": {
+          "address": "Кофемашины, которые сейчас находятся в зоне действия Bluetooth-адаптера или прокси."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Не удалось подключиться. Убедитесь, что кофемашина включена, находится в зоне действия и не подключена к приложению Melitta Connect.",
+      "invalid_auth": "Кофемашина отклонила подключение. Выключите и снова включите её, затем повторите попытку."
+    },
+    "abort": {
+      "already_configured": "Эта кофемашина уже настроена.",
+      "already_in_progress": "Настройка этой кофемашины уже выполняется.",
+      "cannot_connect": "Не удалось подключиться. Убедитесь, что кофемашина включена, находится в зоне действия и не подключена к приложению Melitta Connect.",
+      "invalid_auth": "Кофемашина отклонила подключение. Выключите и снова включите её, затем повторите попытку.",
+      "no_devices_found": "Кофемашина Melitta Barista Smart не найдена. Включите её и убедитесь, что она находится в зоне действия Bluetooth-адаптера или прокси.",
+      "not_supported": "Это Bluetooth-устройство не является Melitta Barista T/TS Smart."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Параметры кофемашины",
+        "data": {
+          "poll_interval": "Интервал опроса состояния",
+          "counter_interval": "Интервал опроса счётчиков",
+          "auto_confirm_prompts": "Подтверждать запросы автоматически"
+        },
+        "data_description": {
+          "poll_interval": "Как часто опрашивать состояние кофемашины, в секундах.",
+          "counter_interval": "Как часто считывать счётчики напитков, в секундах. 0 — не считывать.",
+          "auto_confirm_prompts": "Подтверждать запросы, для которых достаточно нажатия, например «переставьте чашку под капучинатор». Запросы, требующие физических действий, автоматически не подтверждаются."
+        }
+      }
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "brewing": { "name": "Приготовление" },
+      "action_pending": { "name": "Требуется действие" },
+      "water_low": { "name": "Бак для воды пуст" },
+      "trays_full": { "name": "Поддон" },
+      "beans_low": { "name": "Отсек для зёрен пуст" },
+      "beans_low_2": { "name": "Отсек для зёрен 2 пуст" },
+      "easy_clean_due": { "name": "Требуется Easy Clean" }
+    },
+    "button": {
+      "brew": { "name": "Приготовить" },
+      "cancel": { "name": "Отменить" },
+      "confirm_prompt": { "name": "Подтвердить запрос" },
+      "rinse": { "name": "Промывка" },
+      "easy_clean": { "name": "Easy Clean" },
+      "intensive_clean": { "name": "Интенсивная очистка" },
+      "descale": { "name": "Удаление накипи" },
+      "filter_insert": { "name": "Установить фильтр для воды" },
+      "filter_replace": { "name": "Заменить фильтр для воды" },
+      "filter_remove": { "name": "Снять фильтр для воды" },
+      "switch_off": { "name": "Выключить" }
+    },
+    "number": {
+      "water_hardness": { "name": "Жёсткость воды" },
+      "auto_off_after": { "name": "Выключение через" }
+    },
+    "select": {
+      "recipe": {
+        "name": "Напиток",
+        "state": {
+          "espresso": "Эспрессо",
+          "ristretto": "Ристретто",
+          "lungo": "Лунго",
+          "espresso_doppio": "Эспрессо доппио",
+          "ristretto_doppio": "Ристретто доппио",
+          "cafe_creme": "Кафе крема",
+          "cafe_creme_doppio": "Кафе крема доппио",
+          "americano": "Американо",
+          "americano_extra": "Американо экстра",
+          "long_black": "Лонг блэк",
+          "red_eye": "Ред ай",
+          "black_eye": "Блэк ай",
+          "dead_eye": "Дэд ай",
+          "cappuccino": "Капучино",
+          "espresso_macchiato": "Эспрессо макиато",
+          "caffe_latte": "Кафе латте",
+          "cafe_au_lait": "Кафе о-ле",
+          "flat_white": "Флэт уайт",
+          "latte_macchiato": "Латте макиато",
+          "latte_macchiato_extra": "Латте макиато экстра",
+          "latte_macchiato_triple": "Латте макиато тройной",
+          "milk": "Молоко",
+          "milk_froth": "Молочная пена",
+          "hot_water": "Горячая вода"
+        }
+      },
+      "profile": {
+        "name": "Профиль",
+        "state": {
+          "my_coffee": "My Coffee",
+          "profile_1": "Профиль 1",
+          "profile_2": "Профиль 2",
+          "profile_3": "Профиль 3",
+          "profile_4": "Профиль 4",
+          "profile_5": "Профиль 5",
+          "profile_6": "Профиль 6",
+          "profile_7": "Профиль 7",
+          "profile_8": "Профиль 8"
+        }
+      },
+      "brew_temperature": {
+        "name": "Температура заваривания",
+        "state": {
+          "low": "Низкая",
+          "normal": "Обычная",
+          "high": "Высокая"
+        }
+      }
+    },
+    "sensor": {
+      "state": {
+        "name": "Состояние",
+        "state": {
+          "ready": "Готова",
+          "product": "Приготовление",
+          "cleaning": "Очистка",
+          "descaling": "Удаление накипи",
+          "filter_insert": "Установка фильтра",
+          "filter_replace": "Замена фильтра",
+          "filter_remove": "Снятие фильтра",
+          "switch_off": "Выключение",
+          "easy_clean": "Easy Clean",
+          "intensive_clean": "Интенсивная очистка",
+          "evaporating": "Промывка",
+          "busy": "Занята",
+          "unknown_state": "Неизвестно"
+        }
+      },
+      "activity": {
+        "name": "Операция",
+        "state": {
+          "idle": "Простой",
+          "grinding": "Помол",
+          "coffee": "Заваривание кофе",
+          "steam": "Взбивание молока",
+          "water": "Подача воды",
+          "prepare": "Подготовка"
+        }
+      },
+      "action_required": {
+        "name": "Требуется действие",
+        "state": {
+          "none": "Нет",
+          "brew_unit_removed": "Заварочный блок извлечён",
+          "trays_missing": "Поддон не установлен",
+          "empty_trays": "Опорожните поддон",
+          "fill_water": "Наполните бак для воды",
+          "close_powder_lid": "Закройте крышку отсека для молотого кофе",
+          "fill_powder": "Добавьте молотый кофе",
+          "move_cup_to_frother": "Переставьте чашку под капучинатор",
+          "flush_required": "Требуется промывка"
+        }
+      },
+      "progress": { "name": "Прогресс" },
+      "total_drinks": { "name": "Всего напитков" },
+      "water_filter": { "name": "Состояние фильтра для воды" },
+      "drink_counter": { "name": "Счётчик: {drink}" }
+    },
+    "switch": {
+      "energy_saving": { "name": "Энергосбережение" },
+      "rinse_on_start": { "name": "Промывка при включении" },
+      "auto_bean_select": { "name": "Автовыбор отсека для зёрен" }
+    },
+    "time": {
+      "clock": { "name": "Часы" }
+    }
+  },
+  "selector": {
+    "recipe": {
+      "options": {
+        "espresso": "Эспрессо",
+        "ristretto": "Ристретто",
+        "lungo": "Лунго",
+        "espresso_doppio": "Эспрессо доппио",
+        "ristretto_doppio": "Ристретто доппио",
+        "cafe_creme": "Кафе крема",
+        "cafe_creme_doppio": "Кафе крема доппио",
+        "americano": "Американо",
+        "americano_extra": "Американо экстра",
+        "long_black": "Лонг блэк",
+        "red_eye": "Ред ай",
+        "black_eye": "Блэк ай",
+        "dead_eye": "Дэд ай",
+        "cappuccino": "Капучино",
+        "espresso_macchiato": "Эспрессо макиато",
+        "caffe_latte": "Кафе латте",
+        "cafe_au_lait": "Кафе о-ле",
+        "flat_white": "Флэт уайт",
+        "latte_macchiato": "Латте макиато",
+        "latte_macchiato_extra": "Латте макиато экстра",
+        "latte_macchiato_triple": "Латте макиато тройной",
+        "milk": "Молоко",
+        "milk_froth": "Молочная пена",
+        "hot_water": "Горячая вода"
+      }
+    },
+    "process": {
+      "options": {
+        "coffee": "Кофе",
+        "milk": "Молоко",
+        "water": "Горячая вода"
+      }
+    },
+    "intensity": {
+      "options": {
+        "very_mild": "Очень мягкий",
+        "mild": "Мягкий",
+        "medium": "Средний",
+        "strong": "Сильный",
+        "very_strong": "Очень сильный"
+      }
+    },
+    "temperature": {
+      "options": {
+        "low": "Низкая",
+        "normal": "Обычная",
+        "high": "Высокая"
+      }
+    },
+    "hopper": {
+      "options": {
+        "auto": "Автоматически",
+        "hopper_1": "Отсек 1",
+        "hopper_2": "Отсек 2"
+      }
+    },
+    "program": {
+      "options": {
+        "rinse": "Промывка",
+        "easy_clean": "Easy Clean",
+        "intensive_clean": "Интенсивная очистка",
+        "descale": "Удаление накипи",
+        "filter_insert": "Установить фильтр для воды",
+        "filter_replace": "Заменить фильтр для воды",
+        "filter_remove": "Снять фильтр для воды",
+        "switch_off": "Выключить"
+      }
+    }
+  },
+  "services": {
+    "brew": {
+      "name": "Приготовить напиток",
+      "description": "Готовит один из встроенных напитков кофемашины.",
+      "fields": {
+        "device_id": {
+          "name": "Кофемашина",
+          "description": "Кофемашина, которая приготовит напиток."
+        },
+        "recipe": {
+          "name": "Напиток",
+          "description": "Напиток для приготовления. Ред ай, блэк ай и дэд ай доступны только на Barista TS."
+        },
+        "two_cups": {
+          "name": "Две чашки",
+          "description": "Приготовить напиток дважды подряд."
+        }
+      }
+    },
+    "brew_custom": {
+      "name": "Приготовить свой напиток",
+      "description": "Готовит напиток по указанным здесь параметрам, а не по сохранённому рецепту.",
+      "fields": {
+        "device_id": {
+          "name": "Кофемашина",
+          "description": "Кофемашина, которая приготовит напиток."
+        },
+        "process": {
+          "name": "Подача",
+          "description": "Что должна подать кофемашина."
+        },
+        "portion": {
+          "name": "Порция",
+          "description": "Объём в миллилитрах. Округляется до 5 мл."
+        },
+        "milk_portion": {
+          "name": "Порция молока",
+          "description": "Объём молока в миллилитрах. 0 — напиток без молока."
+        },
+        "intensity": {
+          "name": "Крепость",
+          "description": "Крепость кофе."
+        },
+        "temperature": {
+          "name": "Температура",
+          "description": "Температура заваривания."
+        },
+        "hopper": {
+          "name": "Отсек для зёрен",
+          "description": "Из какого отсека брать зёрна. У Barista T один отсек, параметр игнорируется."
+        },
+        "name": {
+          "name": "Название",
+          "description": "Название, отображаемое на дисплее кофемашины во время приготовления."
+        },
+        "two_cups": {
+          "name": "Две чашки",
+          "description": "Приготовить напиток дважды подряд."
+        }
+      }
+    },
+    "cancel": {
+      "name": "Отменить",
+      "description": "Останавливает приготовление текущего напитка.",
+      "fields": {
+        "device_id": {
+          "name": "Кофемашина",
+          "description": "Кофемашина, которую нужно остановить."
+        }
+      }
+    },
+    "confirm_prompt": {
+      "name": "Подтвердить запрос",
+      "description": "Подтверждает запрос, показанный на дисплее кофемашины.",
+      "fields": {
+        "device_id": {
+          "name": "Кофемашина",
+          "description": "Кофемашина, показывающая запрос."
+        }
+      }
+    },
+    "start_maintenance": {
+      "name": "Запустить программу обслуживания",
+      "description": "Запускает очистку, удаление накипи или программу для фильтра воды.",
+      "fields": {
+        "device_id": {
+          "name": "Кофемашина",
+          "description": "Кофемашина, которая выполнит программу."
+        },
+        "program": {
+          "name": "Программа",
+          "description": "Программа для запуска. Для удаления накипи и интенсивной очистки нужно заранее подготовить соответствующее средство."
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "device_not_found": {
+      "message": "Для устройства {device_id} кофемашина не найдена."
+    },
+    "device_not_loaded": {
+      "message": "Кофемашина для устройства {device_id} не загружена."
+    }
+  }
+}

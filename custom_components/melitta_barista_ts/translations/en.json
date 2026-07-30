@@ -1,0 +1,363 @@
+{
+  "config": {
+    "flow_title": "{name}",
+    "step": {
+      "confirm": {
+        "title": "Add coffee machine",
+        "description": "Set up {name} ({address})?\n\nThe machine must be switched on. If Home Assistant has never paired with it before, confirm the pairing request on the machine display."
+      },
+      "user": {
+        "title": "Add coffee machine",
+        "data": {
+          "address": "Coffee machine"
+        },
+        "data_description": {
+          "address": "Machines currently within range of a Bluetooth adapter or proxy."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Could not connect. Make sure the machine is switched on, in range, and not connected to the Melitta Connect app.",
+      "invalid_auth": "The machine refused the connection. Switch it off and on again, then retry."
+    },
+    "abort": {
+      "already_configured": "This coffee machine is already set up.",
+      "already_in_progress": "Setup for this coffee machine is already in progress.",
+      "cannot_connect": "Could not connect. Make sure the machine is switched on, in range, and not connected to the Melitta Connect app.",
+      "invalid_auth": "The machine refused the connection. Switch it off and on again, then retry.",
+      "no_devices_found": "No Melitta Barista Smart machine found. Switch the machine on and make sure it is in range of a Bluetooth adapter or proxy.",
+      "not_supported": "This Bluetooth device is not a Melitta Barista T/TS Smart."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Coffee machine options",
+        "data": {
+          "poll_interval": "Status interval",
+          "counter_interval": "Counter interval",
+          "auto_confirm_prompts": "Confirm prompts automatically"
+        },
+        "data_description": {
+          "poll_interval": "How often to read the machine status, in seconds.",
+          "counter_interval": "How often to read the drink counters, in seconds. Set to 0 to never read them.",
+          "auto_confirm_prompts": "Acknowledge prompts that only need a confirmation, such as \"move cup to frother\". Prompts that need physical action are never confirmed automatically."
+        }
+      }
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "brewing": { "name": "Brewing" },
+      "action_pending": { "name": "Action required" },
+      "water_low": { "name": "Water tank empty" },
+      "trays_full": { "name": "Drip tray" },
+      "beans_low": { "name": "Bean hopper empty" },
+      "beans_low_2": { "name": "Bean hopper 2 empty" },
+      "easy_clean_due": { "name": "Easy Clean due" }
+    },
+    "button": {
+      "brew": { "name": "Brew" },
+      "cancel": { "name": "Cancel" },
+      "confirm_prompt": { "name": "Confirm prompt" },
+      "rinse": { "name": "Rinse" },
+      "easy_clean": { "name": "Easy Clean" },
+      "intensive_clean": { "name": "Intensive cleaning" },
+      "descale": { "name": "Descale" },
+      "filter_insert": { "name": "Insert water filter" },
+      "filter_replace": { "name": "Replace water filter" },
+      "filter_remove": { "name": "Remove water filter" },
+      "switch_off": { "name": "Switch off" }
+    },
+    "number": {
+      "water_hardness": { "name": "Water hardness" },
+      "auto_off_after": { "name": "Switch off after" }
+    },
+    "select": {
+      "recipe": {
+        "name": "Drink",
+        "state": {
+          "espresso": "Espresso",
+          "ristretto": "Ristretto",
+          "lungo": "Lungo",
+          "espresso_doppio": "Espresso doppio",
+          "ristretto_doppio": "Ristretto doppio",
+          "cafe_creme": "Café crème",
+          "cafe_creme_doppio": "Café crème doppio",
+          "americano": "Americano",
+          "americano_extra": "Americano extra",
+          "long_black": "Long black",
+          "red_eye": "Red eye",
+          "black_eye": "Black eye",
+          "dead_eye": "Dead eye",
+          "cappuccino": "Cappuccino",
+          "espresso_macchiato": "Espresso macchiato",
+          "caffe_latte": "Caffè latte",
+          "cafe_au_lait": "Café au lait",
+          "flat_white": "Flat white",
+          "latte_macchiato": "Latte macchiato",
+          "latte_macchiato_extra": "Latte macchiato extra",
+          "latte_macchiato_triple": "Latte macchiato triple",
+          "milk": "Milk",
+          "milk_froth": "Milk froth",
+          "hot_water": "Hot water"
+        }
+      },
+      "profile": {
+        "name": "Profile",
+        "state": {
+          "my_coffee": "My Coffee",
+          "profile_1": "Profile 1",
+          "profile_2": "Profile 2",
+          "profile_3": "Profile 3",
+          "profile_4": "Profile 4",
+          "profile_5": "Profile 5",
+          "profile_6": "Profile 6",
+          "profile_7": "Profile 7",
+          "profile_8": "Profile 8"
+        }
+      },
+      "brew_temperature": {
+        "name": "Brew temperature",
+        "state": {
+          "low": "Low",
+          "normal": "Normal",
+          "high": "High"
+        }
+      }
+    },
+    "sensor": {
+      "state": {
+        "name": "State",
+        "state": {
+          "ready": "Ready",
+          "product": "Preparing",
+          "cleaning": "Cleaning",
+          "descaling": "Descaling",
+          "filter_insert": "Inserting filter",
+          "filter_replace": "Replacing filter",
+          "filter_remove": "Removing filter",
+          "switch_off": "Switching off",
+          "easy_clean": "Easy Clean",
+          "intensive_clean": "Intensive cleaning",
+          "evaporating": "Rinsing",
+          "busy": "Busy",
+          "unknown_state": "Unknown"
+        }
+      },
+      "activity": {
+        "name": "Activity",
+        "state": {
+          "idle": "Idle",
+          "grinding": "Grinding",
+          "coffee": "Brewing coffee",
+          "steam": "Frothing milk",
+          "water": "Dispensing water",
+          "prepare": "Preparing"
+        }
+      },
+      "action_required": {
+        "name": "Action required",
+        "state": {
+          "none": "None",
+          "brew_unit_removed": "Brewing unit removed",
+          "trays_missing": "Drip tray missing",
+          "empty_trays": "Empty the drip tray",
+          "fill_water": "Fill the water tank",
+          "close_powder_lid": "Close the ground coffee lid",
+          "fill_powder": "Add ground coffee",
+          "move_cup_to_frother": "Move the cup to the frother",
+          "flush_required": "Rinsing required"
+        }
+      },
+      "progress": { "name": "Progress" },
+      "total_drinks": { "name": "Drinks total" },
+      "water_filter": { "name": "Water filter state" },
+      "drink_counter": { "name": "{drink} counter" }
+    },
+    "switch": {
+      "energy_saving": { "name": "Energy saving" },
+      "rinse_on_start": { "name": "Rinse when switching on" },
+      "auto_bean_select": { "name": "Automatic bean select" }
+    },
+    "time": {
+      "clock": { "name": "Clock" }
+    }
+  },
+  "selector": {
+    "recipe": {
+      "options": {
+        "espresso": "Espresso",
+        "ristretto": "Ristretto",
+        "lungo": "Lungo",
+        "espresso_doppio": "Espresso doppio",
+        "ristretto_doppio": "Ristretto doppio",
+        "cafe_creme": "Café crème",
+        "cafe_creme_doppio": "Café crème doppio",
+        "americano": "Americano",
+        "americano_extra": "Americano extra",
+        "long_black": "Long black",
+        "red_eye": "Red eye",
+        "black_eye": "Black eye",
+        "dead_eye": "Dead eye",
+        "cappuccino": "Cappuccino",
+        "espresso_macchiato": "Espresso macchiato",
+        "caffe_latte": "Caffè latte",
+        "cafe_au_lait": "Café au lait",
+        "flat_white": "Flat white",
+        "latte_macchiato": "Latte macchiato",
+        "latte_macchiato_extra": "Latte macchiato extra",
+        "latte_macchiato_triple": "Latte macchiato triple",
+        "milk": "Milk",
+        "milk_froth": "Milk froth",
+        "hot_water": "Hot water"
+      }
+    },
+    "process": {
+      "options": {
+        "coffee": "Coffee",
+        "milk": "Milk",
+        "water": "Hot water"
+      }
+    },
+    "intensity": {
+      "options": {
+        "very_mild": "Very mild",
+        "mild": "Mild",
+        "medium": "Medium",
+        "strong": "Strong",
+        "very_strong": "Very strong"
+      }
+    },
+    "temperature": {
+      "options": {
+        "low": "Low",
+        "normal": "Normal",
+        "high": "High"
+      }
+    },
+    "hopper": {
+      "options": {
+        "auto": "Automatic",
+        "hopper_1": "Hopper 1",
+        "hopper_2": "Hopper 2"
+      }
+    },
+    "program": {
+      "options": {
+        "rinse": "Rinse",
+        "easy_clean": "Easy Clean",
+        "intensive_clean": "Intensive cleaning",
+        "descale": "Descale",
+        "filter_insert": "Insert water filter",
+        "filter_replace": "Replace water filter",
+        "filter_remove": "Remove water filter",
+        "switch_off": "Switch off"
+      }
+    }
+  },
+  "services": {
+    "brew": {
+      "name": "Brew",
+      "description": "Prepares one of the machine's built-in drinks.",
+      "fields": {
+        "device_id": {
+          "name": "Coffee machine",
+          "description": "The machine that should prepare the drink."
+        },
+        "recipe": {
+          "name": "Drink",
+          "description": "The drink to prepare. Red eye, black eye and dead eye are Barista TS only."
+        },
+        "two_cups": {
+          "name": "Two cups",
+          "description": "Prepare the drink twice in a row."
+        }
+      }
+    },
+    "brew_custom": {
+      "name": "Brew custom drink",
+      "description": "Prepares a drink from the parameters given here instead of a stored recipe.",
+      "fields": {
+        "device_id": {
+          "name": "Coffee machine",
+          "description": "The machine that should prepare the drink."
+        },
+        "process": {
+          "name": "Dispense",
+          "description": "What the machine should dispense."
+        },
+        "portion": {
+          "name": "Portion",
+          "description": "Amount to dispense, in millilitres. Rounded to the nearest 5 ml."
+        },
+        "milk_portion": {
+          "name": "Milk portion",
+          "description": "Amount of milk to add, in millilitres. Use 0 for a drink without milk."
+        },
+        "intensity": {
+          "name": "Strength",
+          "description": "Coffee strength."
+        },
+        "temperature": {
+          "name": "Temperature",
+          "description": "Brew temperature."
+        },
+        "hopper": {
+          "name": "Bean hopper",
+          "description": "Which hopper to grind from. The Barista T has one hopper and ignores this."
+        },
+        "name": {
+          "name": "Name",
+          "description": "Name shown on the machine display while preparing."
+        },
+        "two_cups": {
+          "name": "Two cups",
+          "description": "Prepare the drink twice in a row."
+        }
+      }
+    },
+    "cancel": {
+      "name": "Cancel",
+      "description": "Stops the drink currently being prepared.",
+      "fields": {
+        "device_id": {
+          "name": "Coffee machine",
+          "description": "The machine to stop."
+        }
+      }
+    },
+    "confirm_prompt": {
+      "name": "Confirm prompt",
+      "description": "Acknowledges the prompt shown on the machine display.",
+      "fields": {
+        "device_id": {
+          "name": "Coffee machine",
+          "description": "The machine showing the prompt."
+        }
+      }
+    },
+    "start_maintenance": {
+      "name": "Start maintenance program",
+      "description": "Starts a cleaning, descaling or water filter program.",
+      "fields": {
+        "device_id": {
+          "name": "Coffee machine",
+          "description": "The machine that should run the program."
+        },
+        "program": {
+          "name": "Program",
+          "description": "The program to start. Descaling and intensive cleaning need the matching cleaning agent in place."
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "device_not_found": {
+      "message": "No coffee machine found for device {device_id}."
+    },
+    "device_not_loaded": {
+      "message": "The coffee machine for device {device_id} is not loaded."
+    }
+  }
+}

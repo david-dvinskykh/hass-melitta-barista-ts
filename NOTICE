@@ -1,0 +1,38 @@
+LEGAL NOTICE
+
+This project is an independent, non-commercial, open-source Home Assistant
+integration created for personal and educational use. It is not affiliated
+with, endorsed by, sponsored by or connected to Melitta Group Management
+GmbH & Co. KG, Eugster/Frismag AG, or any of their subsidiaries or
+affiliates.
+
+TRADEMARKS
+
+"Melitta", "Caffeo", "Barista T Smart", "Barista TS Smart" and the Melitta
+logo are trademarks of Melitta Group Management GmbH & Co. KG.
+
+"Eugster", "Frismag" and associated product names are trademarks of
+Eugster/Frismag AG, the OEM manufacturer whose Bluetooth protocol these
+machines use.
+
+These names are used for identification and interoperability purposes only
+and do not imply any endorsement.
+
+INTEROPERABILITY
+
+The Bluetooth protocol implemented here was obtained by reverse engineering
+the vendor's own Android application, for the sole purpose of making these
+machines work with Home Assistant. No vendor source code is included.
+
+THIRD-PARTY WORK
+
+The protocol description and several protocol constants are derived from
+https://github.com/dzerik/melitta-barista-ha, Copyright (c) 2025 dzerik,
+licensed under the MIT License. Its full license text is reproduced in the
+LICENSE file of this repository.
+
+WARRANTY
+
+Using this integration sends commands to a heated, pressurised appliance.
+It is provided without warranty of any kind; see LICENSE. Never start a
+preparation when the machine is unattended without a cup in place.

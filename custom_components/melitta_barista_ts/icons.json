@@ -1,0 +1,62 @@
+{
+  "entity": {
+    "binary_sensor": {
+      "brewing": {
+        "default": "mdi:coffee-maker",
+        "state": { "off": "mdi:coffee-maker-outline" }
+      },
+      "action_pending": { "default": "mdi:hand-back-right" },
+      "water_low": { "default": "mdi:water-alert" },
+      "trays_full": { "default": "mdi:tray-full" },
+      "beans_low": { "default": "mdi:coffee-off" },
+      "beans_low_2": { "default": "mdi:coffee-off" },
+      "easy_clean_due": { "default": "mdi:spray-bottle" }
+    },
+    "button": {
+      "brew": { "default": "mdi:coffee" },
+      "cancel": { "default": "mdi:stop" },
+      "confirm_prompt": { "default": "mdi:check" },
+      "rinse": { "default": "mdi:water-sync" },
+      "easy_clean": { "default": "mdi:spray-bottle" },
+      "intensive_clean": { "default": "mdi:washing-machine" },
+      "descale": { "default": "mdi:water-percent" },
+      "filter_insert": { "default": "mdi:filter-plus" },
+      "filter_replace": { "default": "mdi:filter-check" },
+      "filter_remove": { "default": "mdi:filter-remove" },
+      "switch_off": { "default": "mdi:power" }
+    },
+    "number": {
+      "water_hardness": { "default": "mdi:water-opacity" },
+      "auto_off_after": { "default": "mdi:timer-off-outline" }
+    },
+    "select": {
+      "recipe": { "default": "mdi:coffee-outline" },
+      "profile": { "default": "mdi:account" },
+      "brew_temperature": { "default": "mdi:thermometer" }
+    },
+    "sensor": {
+      "state": { "default": "mdi:coffee-maker" },
+      "activity": { "default": "mdi:cog-play" },
+      "action_required": { "default": "mdi:hand-back-right" },
+      "progress": { "default": "mdi:progress-clock" },
+      "total_drinks": { "default": "mdi:counter" },
+      "water_filter": { "default": "mdi:air-filter" },
+      "drink_counter": { "default": "mdi:counter" }
+    },
+    "switch": {
+      "energy_saving": { "default": "mdi:leaf" },
+      "rinse_on_start": { "default": "mdi:water-sync" },
+      "auto_bean_select": { "default": "mdi:coffee-outline" }
+    },
+    "time": {
+      "clock": { "default": "mdi:clock-outline" }
+    }
+  },
+  "services": {
+    "brew": "mdi:coffee",
+    "brew_custom": "mdi:coffee-to-go",
+    "cancel": "mdi:stop",
+    "confirm_prompt": "mdi:check",
+    "start_maintenance": "mdi:broom"
+  }
+}

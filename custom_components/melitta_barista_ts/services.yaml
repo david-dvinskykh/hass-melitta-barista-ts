@@ -1,0 +1,152 @@
+brew:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: melitta_barista_ts
+    recipe:
+      required: true
+      example: cappuccino
+      selector:
+        select:
+          translation_key: recipe
+          options:
+            - espresso
+            - ristretto
+            - lungo
+            - espresso_doppio
+            - ristretto_doppio
+            - cafe_creme
+            - cafe_creme_doppio
+            - americano
+            - americano_extra
+            - long_black
+            - red_eye
+            - black_eye
+            - dead_eye
+            - cappuccino
+            - espresso_macchiato
+            - caffe_latte
+            - cafe_au_lait
+            - flat_white
+            - latte_macchiato
+            - latte_macchiato_extra
+            - latte_macchiato_triple
+            - milk
+            - milk_froth
+            - hot_water
+    two_cups:
+      default: false
+      selector:
+        boolean:
+
+brew_custom:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: melitta_barista_ts
+    process:
+      default: coffee
+      selector:
+        select:
+          translation_key: process
+          options:
+            - coffee
+            - milk
+            - water
+    portion:
+      required: true
+      example: 120
+      selector:
+        number:
+          min: 25
+          max: 220
+          step: 5
+          unit_of_measurement: mL
+    milk_portion:
+      default: 0
+      selector:
+        number:
+          min: 0
+          max: 220
+          step: 5
+          unit_of_measurement: mL
+    intensity:
+      default: medium
+      selector:
+        select:
+          translation_key: intensity
+          options:
+            - very_mild
+            - mild
+            - medium
+            - strong
+            - very_strong
+    temperature:
+      default: normal
+      selector:
+        select:
+          translation_key: temperature
+          options:
+            - low
+            - normal
+            - high
+    hopper:
+      default: hopper_1
+      selector:
+        select:
+          translation_key: hopper
+          options:
+            - auto
+            - hopper_1
+            - hopper_2
+    name:
+      default: Home Assistant
+      selector:
+        text:
+    two_cups:
+      default: false
+      selector:
+        boolean:
+
+cancel:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: melitta_barista_ts
+
+confirm_prompt:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: melitta_barista_ts
+
+start_maintenance:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: melitta_barista_ts
+    program:
+      required: true
+      example: easy_clean
+      selector:
+        select:
+          translation_key: program
+          options:
+            - rinse
+            - easy_clean
+            - intensive_clean
+            - descale
+            - filter_insert
+            - filter_replace
+            - filter_remove
+            - switch_off
