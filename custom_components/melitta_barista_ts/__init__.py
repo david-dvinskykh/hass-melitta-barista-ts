@@ -9,7 +9,7 @@ from homeassistant.const import CONF_ADDRESS, Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 
-from .client import MelittaBleClient
+from .client import MelittaBleClient, scanner_source
 from .const import (
     CONF_CONNECT_TIMEOUT,
     CONF_FRAME_TIMEOUT,
@@ -41,8 +41,26 @@ async def async_setup_entry(hass: HomeAssistant, entry: MelittaConfigEntry) -> b
     address: str = entry.data[CONF_ADDRESS]
     options = entry.options
 
+    client: MelittaBleClient | None = None
+
     def _device_provider():
-        """Look up the current BLEDevice; it changes as adverts come in."""
+        """Look up the current BLEDevice, preferring the path that last worked.
+
+        Home Assistant hands out whichever adapter or proxy heard the machine
+        loudest, and that flips between them advert by advert. The machine
+        bonds per adapter, so a flip lands on one holding no key it trusts:
+        the link comes up, the machine ignores the handshake, and the session
+        dies seconds after it started. Going back to the adapter that carried
+        the last working session avoids the whole cycle.
+        """
+        preferred = client.last_good_source if client is not None else None
+        if preferred is not None:
+            for scanner_device in bluetooth.async_scanner_devices_by_address(
+                hass, address, connectable=True
+            ):
+                if scanner_source(scanner_device.ble_device) == preferred:
+                    return scanner_device.ble_device
+
         return bluetooth.async_ble_device_from_address(hass, address, connectable=True)
 
     if _device_provider() is None:

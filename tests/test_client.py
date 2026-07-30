@@ -12,8 +12,8 @@ from custom_components.melitta_barista_ts.client import (
     MelittaBleClient,
     MelittaConnectionError,
     _notify_chars,
-    _scanner_source,
     _write_char_candidates,
+    scanner_source,
 )
 from custom_components.melitta_barista_ts.const import CONNECT_ATTEMPTS, SERVICE_UUID
 from custom_components.melitta_barista_ts.machine import CommandTimeout, HandshakeError
@@ -301,7 +301,7 @@ def test_scanner_source_names_the_adapter(details, expected) -> None:
     """Proxies report a MAC, BlueZ an object path; both should be readable."""
     device = MagicMock()
     device.details = details
-    assert _scanner_source(device) == expected
+    assert scanner_source(device) == expected
 
 
 ALT_WRITE_CHAR = "0000ad01-b35c-11e4-9813-0002a5d5c51b"
@@ -473,3 +473,20 @@ async def test_an_unreachable_machine_says_nothing_about_pairing() -> None:
         await client.async_connect()
 
     assert "pairing mode" not in str(caught.value)
+
+
+async def test_the_working_adapter_is_remembered() -> None:
+    """Bonds live per adapter, so the next connect should go back there."""
+    device = MagicMock()
+    device.address = "AA:BB:CC:DD:EE:FF"
+    device.details = {"source": "44:1D:64:E4:81:3A"}
+    client = MelittaBleClient(lambda: device, name="Machine")
+
+    assert client.last_good_source is None
+    with (
+        patch(ESTABLISH, AsyncMock(return_value=_fake_gatt_client())),
+        patch.object(client.machine, "handshake", AsyncMock()),
+    ):
+        await client.async_connect()
+
+    assert client.last_good_source == "44:1D:64:E4:81:3A"

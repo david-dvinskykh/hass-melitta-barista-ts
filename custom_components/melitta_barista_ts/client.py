@@ -62,6 +62,9 @@ class MelittaBleClient:
         self._notify_chars: list[str] = []
         self._connect_lock = asyncio.Lock()
         self._closing = False
+        #: Adapter or proxy that carried the last working session. Bonds are
+        #: held per adapter, so the one that worked is worth going back to.
+        self.last_good_source: str | None = None
         self.machine = MelittaMachine(self._write, frame_timeout=frame_timeout)
 
     # -- state -----------------------------------------------------------
@@ -145,8 +148,12 @@ class MelittaBleClient:
                         attempts.append(True)
                     continue
 
+                self.last_good_source = scanner_source(device)
                 _LOGGER.debug(
-                    "Session established with %s (pair=%s)", device.address, pair
+                    "Session established with %s via %s (pair=%s)",
+                    device.address,
+                    self.last_good_source,
+                    pair,
                 )
                 return
 
@@ -217,7 +224,7 @@ class MelittaBleClient:
         _LOGGER.debug(
             "Connecting to %s via %s (pair=%s)",
             device.address,
-            _scanner_source(device),
+            scanner_source(device),
             pair,
         )
         try:
@@ -236,7 +243,7 @@ class MelittaBleClient:
             # say what timed out and where, or the log line reads as an
             # unexplained blank failure.
             raise MelittaConnectionError(
-                f"connect via {_scanner_source(device)} timed out after "
+                f"connect via {scanner_source(device)} timed out after "
                 f"{self._connect_timeout:g}s"
             ) from err
         except BleakError as err:
@@ -358,7 +365,7 @@ class MelittaBleClient:
             raise MelittaConnectionError(f"transport error: {err}") from err
 
 
-def _scanner_source(device: BLEDevice) -> str:
+def scanner_source(device: BLEDevice) -> str:
     """Name the adapter or proxy the device was last heard on.
 
     Home Assistant picks the scanner with the strongest signal, which is not
