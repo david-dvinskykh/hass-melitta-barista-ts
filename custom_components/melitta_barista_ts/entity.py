@@ -31,8 +31,15 @@ class MelittaEntity(CoordinatorEntity[MelittaCoordinator]):
 
     @property
     def available(self) -> bool:
-        """Entities are unavailable while the machine cannot be reached."""
-        return super().available and self.coordinator.data.status is not None
+        """Unavailable once the machine has been out of reach for a while.
+
+        Deliberately not tied to the last poll: over BLE a poll fails
+        whenever the machine has dropped the link, which it does routinely
+        and recovers from on the next one.
+        """
+        return (
+            self.coordinator.data_is_fresh and self.coordinator.data.status is not None
+        )
 
 
 class MelittaLocalEntity(MelittaEntity):

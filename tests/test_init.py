@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from time import monotonic
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -24,6 +25,7 @@ from custom_components.melitta_barista_ts.const import (
     directkey_recipe_id,
     profile_name_id,
 )
+from custom_components.melitta_barista_ts.coordinator import STALE_AFTER_SECONDS
 from custom_components.melitta_barista_ts.protocol import (
     MachineRecipe,
     MachineStatus,
@@ -612,3 +614,41 @@ async def test_care_tallies_reach_their_sensors(hass: HomeAssistant, config_entr
     assert hass.states.get(f"sensor.{machine_name}_descalings").state == "24"
     assert hass.states.get(f"sensor.{machine_name}_filter_changes").state == "1"
     assert hass.states.get(f"sensor.{machine_name}_milk_system_cleanings").state == "40"
+
+
+async def test_one_failed_poll_does_not_grey_out_the_dashboard(
+    hass: HomeAssistant, config_entry
+) -> None:
+    """The machine drops the BLE link routinely; that is not a fault.
+
+    Entities that follow the last poll alone flicker between their value and
+    unavailable every time the link has to be re-established.
+    """
+    client = _make_client()
+    await _setup(hass, config_entry, client)
+
+    client.async_connect = AsyncMock(side_effect=MelittaConnectionError("dropped"))
+    await _poll_again(hass, config_entry)
+
+    assert not config_entry.runtime_data.last_update_success
+    assert hass.states.get("sensor.melitta_barista_ts_smart_status").state == "ready"
+
+
+async def test_a_machine_that_stays_away_does_go_unavailable(
+    hass: HomeAssistant, config_entry
+) -> None:
+    """Holding the last reading for ever would be worse than saying nothing."""
+    client = _make_client()
+    await _setup(hass, config_entry, client)
+
+    client.async_connect = AsyncMock(side_effect=MelittaConnectionError("switched off"))
+    with patch(
+        "custom_components.melitta_barista_ts.coordinator.monotonic",
+        return_value=monotonic() + STALE_AFTER_SECONDS + 1,
+    ):
+        await _poll_again(hass, config_entry)
+
+    assert (
+        hass.states.get("sensor.melitta_barista_ts_smart_status").state
+        == STATE_UNAVAILABLE
+    )

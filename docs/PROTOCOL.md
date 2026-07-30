@@ -336,13 +336,16 @@ that was never named reads back as the machine's placeholder — literally
 | 100 + recipe_type | per-drink cup counter |
 | 150 | total dispense counter, hot water included |
 | 151 | hot water dispenses |
-| 152, 153, 154, 155 | statistics, meaning not established |
+| 152 | dispenses of any kind, milk froth included |
+| 153, 154 | statistics, meaning not established |
+| 155 | coffee brews since the last coffee system cleaning (assumed) |
 | 160 | rinse cycles (assumed) |
 | 161 | coffee system cleanings |
 | 162 | descalings |
 | 163 | filter changes |
 | 164 | milk system cleanings |
-| 170–175 | statistics, meaning not established |
+| 171 | statistics, meaning not established |
+| 170, 172–175 | zero on the machine seen so far |
 
 Value encodings for registers 12, 14, 15, 16, 18, 22 and 91 have not been
 confirmed, which is why the integration exposes them only through the raw
@@ -356,7 +359,16 @@ any register yet.
 
 Register 150 runs ahead of the total the machine displays by exactly the hot
 water count: a machine showing 5406 drinks and 59 hot water dispenses reads
-5465 here.
+5465 here. Milk froth is not in it — a cappuccino and a milk froth together
+moved 150 by one.
+
+Brewing one cappuccino and one milk froth moved 150 by 1, 152 by 2, 155 by 1
+and 113/122 (their own cup counters) by 1 each, and left 153, 154 and 160-164
+alone. So 155 counts coffee brews, and its magnitude — 35 against 5467
+lifetime dispenses and 25 coffee system cleanings — puts it at brews since
+the last cleaning rather than a lifetime total. The equivalent for the milk
+system has not been found: nothing moved by two except 152, which is far too
+large to be a since-last-cleaning count.
 
 The block ends at 175 — 176 and up answer nothing — and 156 to 159 and 165 to
 169 are unassigned. Use the `scan_settings` service to look for more; a read

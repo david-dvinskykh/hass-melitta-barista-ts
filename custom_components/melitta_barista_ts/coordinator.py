@@ -44,6 +44,12 @@ _LOGGER = logging.getLogger(__name__)
 #: Registers that change slowly are re-read on this cadence, not every poll.
 SETTINGS_REFRESH_SECONDS = 300.0
 
+#: How long a reading stays worth showing after a poll fails. The machine
+#: drops the BLE link whenever it likes and the next poll picks it back up,
+#: so failing polls are routine rather than a fault — greying every entity
+#: out for the seconds in between only makes the dashboard flicker.
+STALE_AFTER_SECONDS = 180.0
+
 #: Recipe types whose per-drink counters we surface.
 _CUP_COUNTER_TYPES = range(24)
 
@@ -129,6 +135,7 @@ class MelittaCoordinator(DataUpdateCoordinator[MelittaData]):
         self.selected_profile: int = MY_COFFEE_PROFILE
         self.selected_profile_drink: DirectKeyCategory = DirectKeyCategory.ESPRESSO
         self._settings_read_at: float | None = None
+        self._last_success_at: float | None = None
         self._counters_due = True
         self._first_refresh_done = False
         self._unsub_status = client.add_status_listener(self._handle_pushed_status)
@@ -180,7 +187,17 @@ class MelittaCoordinator(DataUpdateCoordinator[MelittaData]):
             raise UpdateFailed(f"communication error: {err}") from err
 
         self._first_refresh_done = True
+        self._last_success_at = monotonic()
         return data
+
+    @property
+    def data_is_fresh(self) -> bool:
+        """True while the last good reading is recent enough to still show."""
+        if self.last_update_success:
+            return True
+        if self._last_success_at is None:
+            return False
+        return monotonic() - self._last_success_at < STALE_AFTER_SECONDS
 
     @property
     def _settings_due(self) -> bool:
