@@ -436,3 +436,40 @@ async def test_write_honours_the_declared_write_type(
         await client._write(b"frame")
 
     assert gatt.write_gatt_char.await_args.kwargs["response"] is expected_response
+
+
+async def test_a_silent_machine_is_reported_as_unbonded() -> None:
+    """Connecting fine but ignoring the handshake means there is no bond.
+
+    Numeric Comparison needs someone at the machine, so the error has to say
+    that rather than read like a machine out of range.
+    """
+    gatt = _fake_gatt_client(
+        _char(WRITE_CHAR, "write"),
+        _char(NOTIFY_CHAR, "notify"),
+    )
+    client = _make_client()
+
+    with (
+        patch(ESTABLISH, AsyncMock(return_value=gatt)),
+        patch.object(
+            client.machine,
+            "handshake",
+            AsyncMock(side_effect=CommandTimeout("no response to HU")),
+        ),
+        pytest.raises(MelittaConnectionError, match="pairing mode"),
+    ):
+        await client.async_connect()
+
+
+async def test_an_unreachable_machine_says_nothing_about_pairing() -> None:
+    """A machine that never answered the radio is a different problem."""
+    client = _make_client()
+
+    with (
+        patch(ESTABLISH, AsyncMock(side_effect=BleakError("device not found"))),
+        pytest.raises(MelittaConnectionError) as caught,
+    ):
+        await client.async_connect()
+
+    assert "pairing mode" not in str(caught.value)

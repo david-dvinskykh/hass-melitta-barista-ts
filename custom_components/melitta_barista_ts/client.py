@@ -118,6 +118,7 @@ class MelittaBleClient:
             bond_cleared = False
             last_error: Exception | None = None
             first = True
+            silent_machine = False
 
             while attempts:
                 pair = attempts.pop(0)
@@ -136,6 +137,7 @@ class MelittaBleClient:
                         err,
                     )
                     last_error = err
+                    silent_machine = silent_machine or _went_silent(err)
                     await self._async_disconnect_locked()
                     if pair and not bond_cleared and _is_pairing_refused(err):
                         bond_cleared = True
@@ -148,9 +150,19 @@ class MelittaBleClient:
                 )
                 return
 
-            raise MelittaConnectionError(
-                f"could not establish a session with {self._name}: {last_error}"
-            )
+            message = f"could not establish a session with {self._name}: {last_error}"
+            if silent_machine:
+                # The link came up and the machine ignored the handshake, so
+                # there is no bond it trusts — and Numeric Comparison cannot be
+                # completed from this side alone. Say so, or the failure reads
+                # like a machine that is simply out of range.
+                message += (
+                    ". The machine answered the connection but not the "
+                    "handshake, which means it is not bonded with Home "
+                    "Assistant. Put it into pairing mode from its own menu "
+                    "and confirm the code shown on its display"
+                )
+            raise MelittaConnectionError(message)
 
     async def _async_clear_bond(self, device: BLEDevice) -> None:
         """Forget the bond this side holds, so the next attempt pairs afresh.
@@ -390,6 +402,16 @@ def _is_pairing_refused(err: Exception) -> bool:
     """
     text = str(err).lower()
     return any(marker in text for marker in _PAIRING_REFUSED_MARKERS)
+
+
+def _went_silent(err: Exception) -> bool:
+    """True when the machine took the connection but answered nothing.
+
+    Distinct from every other failure in the ladder: the radio link and the
+    GATT table are fine, so the machine is deliberately ignoring us — which
+    is what it does over a link it has no bond for.
+    """
+    return "no handshake on any writable characteristic" in str(err)
 
 
 def _notify_chars(client: BleakClient) -> list[str]:
