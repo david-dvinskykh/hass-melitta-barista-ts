@@ -19,8 +19,10 @@ from bleak_retry_connector import establish_connection
 from .const import (
     CHAR_NOTIFY_UUID,
     CHAR_WRITE_UUID_CANDIDATES,
+    CONNECT_ATTEMPTS,
     DEFAULT_CONNECT_TIMEOUT,
     DEFAULT_FRAME_TIMEOUT,
+    PAIR_SETTLE_DELAY,
     SERVICE_UUID,
 )
 from .machine import MachineError, MelittaMachine
@@ -57,6 +59,7 @@ class MelittaBleClient:
         self._write_char: str | None = None
         self._connect_lock = asyncio.Lock()
         self._closing = False
+        self._bonded = False
         self.machine = MelittaMachine(self._write, frame_timeout=frame_timeout)
 
     # -- state -----------------------------------------------------------
@@ -82,6 +85,11 @@ class MelittaBleClient:
         """Ensure a connected, handshaken session.
 
         Safe to call repeatedly; returns immediately when already connected.
+
+        The machine bonds with Numeric Comparison, so a first connection has
+        to request pairing. Bonding is expensive and only needed once, so this
+        tries the cheap unbonded path first and escalates only when the
+        session does not come up — mirroring what the vendor app does.
         """
         if self.connected:
             return
@@ -100,30 +108,71 @@ class MelittaBleClient:
             if self._use_pairing_agent:
                 await async_ensure_agent()
 
-            _LOGGER.debug("Connecting to %s", device.address)
-            try:
+            # Once bonded, skip straight to the fast path on every reconnect.
+            attempts = (True,) if self._bonded else (False, True)
+            last_error: Exception | None = None
+
+            for index, pair in enumerate(attempts):
+                if index:
+                    # Let the adapter or proxy release the previous connection
+                    # slot before asking for a bond on a fresh one.
+                    await asyncio.sleep(PAIR_SETTLE_DELAY)
+                try:
+                    await self._async_open_session(device, pair=pair)
+                except (MelittaConnectionError, MachineError, BleakError) as err:
+                    _LOGGER.debug(
+                        "Session setup failed for %s (pair=%s): %s",
+                        device.address,
+                        pair,
+                        err,
+                    )
+                    last_error = err
+                    await self._async_disconnect_locked()
+                    continue
+
+                self._bonded = True
+                _LOGGER.debug(
+                    "Session established with %s (pair=%s)", device.address, pair
+                )
+                return
+
+            self._bonded = False
+            raise MelittaConnectionError(
+                f"could not establish a session with {self._name}: {last_error}"
+            )
+
+    async def _async_open_session(self, device: BLEDevice, *, pair: bool) -> None:
+        """Connect, subscribe and handshake, or raise.
+
+        ``establish_connection`` has no overall timeout of its own — it retries
+        internally, and each attempt carries a 60 s safety timeout — so an
+        unreachable machine can otherwise block for minutes and get the whole
+        config entry setup cancelled. The bound below is what keeps a failed
+        connect cheap.
+        """
+        try:
+            async with asyncio.timeout(self._connect_timeout):
                 client = await establish_connection(
                     BleakClient,
                     device,
                     self._name,
                     disconnected_callback=self._on_disconnect,
-                    timeout=self._connect_timeout,
+                    max_attempts=CONNECT_ATTEMPTS,
+                    pair=pair,
                 )
-            except (BleakError, TimeoutError) as err:
-                raise MelittaConnectionError(f"could not connect: {err}") from err
+        except (BleakError, TimeoutError) as err:
+            raise MelittaConnectionError(f"could not connect: {err}") from err
 
-            self._client = client
-            try:
-                self._write_char = _resolve_write_char(client)
-                await client.start_notify(CHAR_NOTIFY_UUID, self._on_notify)
+        self._client = client
+        try:
+            self._write_char = _resolve_write_char(client)
+            await client.start_notify(CHAR_NOTIFY_UUID, self._on_notify)
+            async with asyncio.timeout(self._connect_timeout):
                 await self.machine.handshake()
-            except Exception as err:
-                await self._async_disconnect_locked()
-                if isinstance(err, MachineError):
-                    raise
-                raise MelittaConnectionError(f"session setup failed: {err}") from err
-
-            _LOGGER.debug("Session established with %s", device.address)
+        except MachineError:
+            raise
+        except Exception as err:
+            raise MelittaConnectionError(f"session setup failed: {err}") from err
 
     async def async_disconnect(self) -> None:
         """Tear down the GATT link."""

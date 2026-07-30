@@ -74,7 +74,10 @@ class MelittaConfigFlow(ConfigFlow, domain=DOMAIN):
             return self.async_abort(reason="not_supported")
 
         self._discovery = discovery_info
-        self.context["title_placeholders"] = {"name": suggested_title(discovery_info)}
+        self.context["title_placeholders"] = {
+            "name": suggested_title(discovery_info),
+            "address": discovery_info.address,
+        }
         return await self.async_step_confirm()
 
     async def async_step_confirm(
@@ -85,6 +88,9 @@ class MelittaConfigFlow(ConfigFlow, domain=DOMAIN):
         title = suggested_title(self._discovery)
 
         if user_input is not None:
+            # The form can sit open while the same machine is added another
+            # way; re-check rather than creating a duplicate entry.
+            self._abort_if_unique_id_configured()
             return self.async_create_entry(
                 title=title, data={CONF_ADDRESS: self._discovery.address}
             )

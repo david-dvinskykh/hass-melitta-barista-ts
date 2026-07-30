@@ -116,6 +116,17 @@ async def _setup(hass: HomeAssistant, entry: MockConfigEntry, client: MagicMock)
     return entry
 
 
+async def _poll_again(hass: HomeAssistant, entry: MockConfigEntry) -> None:
+    """Run one more coordinator refresh.
+
+    Setup only connects and reads the status; profiles, settings and cup
+    counters are deliberately left to the next poll so Home Assistant does not
+    cancel the entry setup while ~35 BLE round trips run.
+    """
+    await entry.runtime_data.async_refresh()
+    await hass.async_block_till_done()
+
+
 async def test_setup_and_unload(hass: HomeAssistant, config_entry) -> None:
     client = _make_client()
     await _setup(hass, config_entry, client)
@@ -336,6 +347,7 @@ async def test_profile_options_come_from_the_machine(
 ) -> None:
     """Named profiles show their name; unnamed ones get a placeholder."""
     await _setup(hass, config_entry, _make_client())
+    await _poll_again(hass, config_entry)
 
     state = hass.states.get("select.melitta_barista_ts_smart_profile")
     assert state.state == "My Coffee"
@@ -349,6 +361,7 @@ async def test_profile_count_follows_the_model(
     client = _make_client()
     client.machine.read_numerical = AsyncMock(return_value=int(MachineType.BARISTA_T))
     await _setup(hass, config_entry, client)
+    await _poll_again(hass, config_entry)
 
     options = hass.states.get("select.melitta_barista_ts_smart_profile").attributes[
         "options"
@@ -362,6 +375,7 @@ async def test_selecting_a_profile_reads_its_direct_key(
     """Switching profile reloads the currently selected direct key from it."""
     client = _make_client()
     await _setup(hass, config_entry, client)
+    await _poll_again(hass, config_entry)
 
     await hass.services.async_call(
         "select",
@@ -381,6 +395,7 @@ async def test_profile_brew_button_uses_the_direct_key_slot(
     """Brewing from a profile targets that profile's direct-key recipe."""
     client = _make_client()
     await _setup(hass, config_entry, client)
+    await _poll_again(hass, config_entry)
 
     await hass.services.async_call(
         "select",
@@ -463,6 +478,7 @@ async def test_brew_service_rejects_a_profile_the_machine_lacks(
     client = _make_client()
     client.machine.read_numerical = AsyncMock(return_value=int(MachineType.BARISTA_T))
     await _setup(hass, config_entry, client)
+    await _poll_again(hass, config_entry)
 
     with pytest.raises(HomeAssistantError, match="no profile 7"):
         await hass.services.async_call(
@@ -477,3 +493,20 @@ async def test_brew_service_rejects_a_profile_the_machine_lacks(
         )
 
     client.machine.brew.assert_not_awaited()
+
+
+async def test_setup_defers_the_expensive_reads(
+    hass: HomeAssistant, config_entry
+) -> None:
+    """Entry setup must stay cheap — Home Assistant cancels slow setups."""
+    client = _make_client()
+    await _setup(hass, config_entry, client)
+
+    # Only the machine-type probe; no profile names, no cup counters.
+    assert client.machine.read_alphanumeric.await_count == 0
+    assert client.machine.read_numerical.await_count == 1
+
+    await _poll_again(hass, config_entry)
+
+    assert client.machine.read_alphanumeric.await_count == 8
+    assert client.machine.read_numerical.await_count > 25

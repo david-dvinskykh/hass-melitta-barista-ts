@@ -128,6 +128,7 @@ class MelittaCoordinator(DataUpdateCoordinator[MelittaData]):
         self.selected_profile_drink: DirectKeyCategory = DirectKeyCategory.ESPRESSO
         self._settings_read_at: float | None = None
         self._counters_due = True
+        self._first_refresh_done = False
         self._unsub_status = client.add_status_listener(self._handle_pushed_status)
 
     # -- lifecycle -------------------------------------------------------
@@ -158,18 +159,25 @@ class MelittaCoordinator(DataUpdateCoordinator[MelittaData]):
             if data.machine_type is None:
                 data.machine_type = await self._safe_read_machine_type()
 
-            if self._settings_due:
-                await self._async_refresh_settings(data)
-                self._settings_read_at = monotonic()
+            # The first refresh runs inside async_setup_entry, which Home
+            # Assistant will cancel if it drags on. Connecting and reading the
+            # status is enough to prove the machine is there; the ~35 further
+            # round trips for settings, profiles and counters wait for the
+            # next poll.
+            if self._first_refresh_done:
+                if self._settings_due:
+                    await self._async_refresh_settings(data)
+                    self._settings_read_at = monotonic()
 
-            if self._counters_due:
-                await self._async_refresh_counters(data)
-                self._counters_due = False
+                if self._counters_due:
+                    await self._async_refresh_counters(data)
+                    self._counters_due = False
         except MelittaConnectionError as err:
             raise UpdateFailed(str(err)) from err
         except (MachineError, ProtocolError) as err:
             raise UpdateFailed(f"communication error: {err}") from err
 
+        self._first_refresh_done = True
         return data
 
     @property

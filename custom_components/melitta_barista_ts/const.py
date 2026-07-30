@@ -537,6 +537,16 @@ DEFAULT_PAIRING_AGENT: Final = True
 #: Delay the vendor app inserts between the steps of the brew sequence.
 BREW_STEP_DELAY: Final = 0.2
 
+#: Retries inside a single ``establish_connection`` call. Kept low because the
+#: caller bounds the whole attempt with its own timeout — the library default
+#: of four, each with a 60 s safety timeout, is far longer than Home Assistant
+#: will wait for a config entry to set up.
+CONNECT_ATTEMPTS: Final = 2
+
+#: Pause before escalating to a bonded connect, so the adapter or Bluetooth
+#: proxy can release the connection slot the failed attempt was holding.
+PAIR_SETTLE_DELAY: Final = 2.0
+
 # --------------------------------------------------------------------------
 # Services
 # --------------------------------------------------------------------------
