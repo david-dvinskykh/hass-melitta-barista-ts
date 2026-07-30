@@ -44,6 +44,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: MelittaConfigEntry) -> b
     address: str = entry.data[CONF_ADDRESS]
     options = entry.options
 
+    # Before anything that talks to the machine: the logo has nothing to do
+    # with whether it can be reached, and a machine that is switched off
+    # would otherwise keep the placeholder on the integrations page.
+    if options.get(CONF_BRAND_ICON, DEFAULT_BRAND_ICON):
+        await async_serve_brand(hass)
+        entry.async_on_unload(lambda: async_stop_serving_brand(hass))
+
     client: MelittaBleClient | None = None
 
     def _device_provider():
@@ -105,10 +112,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: MelittaConfigEntry) -> b
             bluetooth.BluetoothScanningMode.PASSIVE,
         )
     )
-
-    if options.get(CONF_BRAND_ICON, DEFAULT_BRAND_ICON):
-        await async_serve_brand(hass)
-        entry.async_on_unload(lambda: async_stop_serving_brand(hass))
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
