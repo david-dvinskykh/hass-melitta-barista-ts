@@ -47,14 +47,20 @@ directory and restart Home Assistant.
 
 ### Integration icon
 
-Every entity carries its own icon, but the tile on the integrations page
-comes from Home Assistant's shared brands repository, which no custom
-integration can serve from its own folder — until the domain is listed
-there, the tile stays a puzzle piece. To change that, open a pull request
-against [home-assistant/brands](https://github.com/home-assistant/brands)
-adding `custom_integrations/melitta_barista_ts/icon.png` (256×256) and
-`icon@2x.png` (512×512), plus `logo.png` / `logo@2x.png` if you have the
-wordmark, using artwork from Melitta's own press material.
+Every entity carries its own icon, but the tile on the integrations and
+devices pages is fetched from `brands.home-assistant.io` by the frontend —
+no custom integration can serve it from its own folder, and nothing in this
+repository or in Home Assistant's configuration can point it elsewhere.
+Until the domain is listed in the shared brands repository, the tile stays a
+puzzle piece.
+
+The artwork is ready for that in [`brand/`](brand): `icon.png` (256×256),
+`icon@2x.png` (512×512), `logo.png` and `logo@2x.png`, all trimmed and on a
+transparent background. To publish it, copy them into
+`custom_integrations/melitta_barista_ts/` in a fork of
+[home-assistant/brands](https://github.com/home-assistant/brands) and open a
+pull request. Expect a manual review, and a while longer for the CDN to
+catch up.
 
 ## Setup
 
