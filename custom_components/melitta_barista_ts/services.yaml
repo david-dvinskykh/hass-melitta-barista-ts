@@ -55,8 +55,8 @@ brew:
         select:
           translation_key: brew_temperature
           options:
-            - cold
-            - normal
+            - low
+            - medium
             - high
     portion_ml:
       required: false

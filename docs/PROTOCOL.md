@@ -244,7 +244,7 @@ cappuccino (2), not macchiato.
 | 2 | blend | default=0, hopper 1=1, hopper 2=2 |
 | 3 | intensity | very mild=0 … very strong=4 |
 | 4 | aroma | standard=0, intense=1 |
-| 5 | temperature | cold=0, normal=1, high=2 |
+| 5 | temperature | low=0, medium=1, high=2 |
 | 6 | portion | × 5 = millilitres |
 | 7 | reserved | 0 |
 
@@ -351,12 +351,10 @@ characteristic table above, that bonding is required, that writes take a
 response, the status and recipe layouts, the numerical registers listed
 above, and the direct-key and profile-name formulas.
 
-One open question from that session: the `temperature` byte of a recipe
-component. This integration labels `0` as "cold", following the reference
-implementation — but a stock profile espresso reads back with `temperature =
-0`, and the machine cannot brew cold espresso. The built-in espresso recipe
-uses `2`. A low/medium/high scale fits the observed values better than
-cold/normal/high, and the machine's own menu offers three brew temperatures.
+The `temperature` byte is a low/medium/high scale, not cold/normal/hot: a
+stock profile espresso reads back as `0` on a machine that cannot brew cold
+espresso, and the built-in espresso recipe uses `2`. The machine's own menu
+offers three brew temperatures, which is what these three values are.
 
 Still unverified: `HF`/`HL`/`HP`/`HQ` contents, and the value encodings for
 registers 12, 14, 15, 16, 18, 22 and 91.

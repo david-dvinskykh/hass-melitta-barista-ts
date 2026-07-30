@@ -83,6 +83,27 @@
       },
       "brew_profile": {
         "name": "Brew from profile"
+      },
+      "key_espresso": {
+        "name": "Espresso key"
+      },
+      "key_cafe_creme": {
+        "name": "Café Crème key"
+      },
+      "key_cappuccino": {
+        "name": "Cappuccino key"
+      },
+      "key_latte_macchiato": {
+        "name": "Latte Macchiato key"
+      },
+      "key_milk_froth": {
+        "name": "Milk froth key"
+      },
+      "key_milk": {
+        "name": "Milk key"
+      },
+      "key_hot_water": {
+        "name": "Hot water key"
       }
     },
     "number": {
@@ -136,8 +157,8 @@
       "brew_temperature": {
         "name": "Brew temperature",
         "state": {
-          "cold": "Cold",
-          "normal": "Normal",
+          "low": "Low",
+          "medium": "Medium",
           "high": "High"
         }
       },
@@ -271,8 +292,8 @@
     },
     "brew_temperature": {
       "options": {
-        "cold": "Cold",
-        "normal": "Normal",
+        "low": "Low",
+        "medium": "Medium",
         "high": "High"
       }
     },

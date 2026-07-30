@@ -56,7 +56,7 @@ class BrewSettings:
     """
 
     intensity: Intensity = Intensity.MEDIUM
-    temperature: BrewTemperature = BrewTemperature.NORMAL
+    temperature: BrewTemperature = BrewTemperature.MEDIUM
     portion_ml: int = 40
     blend: Blend = Blend.DEFAULT
     two_cups: bool = False
@@ -408,6 +408,27 @@ class MelittaCoordinator(DataUpdateCoordinator[MelittaData]):
             portion_ml=portion_ml,
             blend=blend,
         )
+
+    async def async_press_direct_key(self, category: DirectKeyCategory) -> None:
+        """Brew a direct key the way pressing it on the machine would.
+
+        Deliberately ignores the staged strength, temperature and cup size:
+        a key on the front panel makes what the profile has stored under it,
+        and these entities exist to mirror that. Use the Brew from profile
+        button when the staged values should apply.
+        """
+        profile = self.selected_profile
+        known = self.data.profile_names
+        if known and profile not in known:
+            raise MachineError(f"this machine has no profile {profile}")
+
+        await self.client.async_run(
+            self.client.machine.brew,
+            directkey_recipe_id(profile, category),
+            name=DIRECTKEY_DISPLAY_NAMES[category],
+        )
+        self.async_invalidate_counters()
+        await self.async_request_refresh()
 
     async def _async_brew_slot(
         self,

@@ -87,6 +87,7 @@ bluetoothctl
 | Two cups | switch | Applied to the next brew |
 | Switch off after | number | Written to the machine |
 | Brew, Brew from profile, Cancel, Sync clock | button | |
+| Espresso key, Café Crème key, Cappuccino key, Latte Macchiato key, Milk froth key, Milk key, Hot water key | button | The machine's direct-select keys |
 
 Selecting a drink reads that recipe from the machine and loads its stored
 strength, temperature and cup size into the corresponding entities — so the
@@ -108,6 +109,17 @@ Barista TS keeps eight user profiles on top of it, the Barista T four.
 
 The plain **Brew** button is unaffected — it always uses the built-in
 recipes, which cover all 24 drinks.
+
+### The machine's own keys
+
+There is also one button per direct-select key on the machine's front panel:
+Espresso, Café Crème, Cappuccino, Latte Macchiato, Milk froth, Milk and Hot
+water. Pressing one makes what the selected profile stores under that key —
+the same as pressing the key on the machine, so the staged strength,
+temperature and cup size are deliberately *not* applied. Switch profile and
+the keys follow, exactly as they do on the machine.
+
+Use **Brew from profile** instead when the staged values should apply.
 
 ## Services
 

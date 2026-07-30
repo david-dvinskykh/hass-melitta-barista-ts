@@ -408,10 +408,14 @@ class Intensity(IntEnum):
 
 
 class BrewTemperature(IntEnum):
-    """Brew temperature."""
+    """Brew temperature, as the three levels the machine's own menu offers.
 
-    COLD = 0
-    NORMAL = 1
+    Not a cold/normal/hot scale: a stock profile espresso reads back as 0,
+    and the machine cannot brew cold espresso.
+    """
+
+    LOW = 0
+    MEDIUM = 1
     HIGH = 2
 
 
@@ -435,8 +439,8 @@ SLUG_TO_INTENSITY: Final[dict[str, Intensity]] = {
 }
 
 TEMPERATURE_SLUGS: Final[dict[BrewTemperature, str]] = {
-    BrewTemperature.COLD: "cold",
-    BrewTemperature.NORMAL: "normal",
+    BrewTemperature.LOW: "low",
+    BrewTemperature.MEDIUM: "medium",
     BrewTemperature.HIGH: "high",
 }
 SLUG_TO_TEMPERATURE: Final[dict[str, BrewTemperature]] = {

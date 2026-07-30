@@ -83,6 +83,27 @@
       },
       "brew_profile": {
         "name": "Приготовить из профиля"
+      },
+      "key_espresso": {
+        "name": "Клавиша «Эспрессо»"
+      },
+      "key_cafe_creme": {
+        "name": "Клавиша «Кафе-крема»"
+      },
+      "key_cappuccino": {
+        "name": "Клавиша «Капучино»"
+      },
+      "key_latte_macchiato": {
+        "name": "Клавиша «Латте макиато»"
+      },
+      "key_milk_froth": {
+        "name": "Клавиша «Молочная пена»"
+      },
+      "key_milk": {
+        "name": "Клавиша «Молоко»"
+      },
+      "key_hot_water": {
+        "name": "Клавиша «Горячая вода»"
       }
     },
     "number": {
@@ -136,8 +157,8 @@
       "brew_temperature": {
         "name": "Температура заваривания",
         "state": {
-          "cold": "Холодная",
-          "normal": "Обычная",
+          "low": "Низкая",
+          "medium": "Средняя",
           "high": "Высокая"
         }
       },
@@ -271,8 +292,8 @@
     },
     "brew_temperature": {
       "options": {
-        "cold": "Холодная",
-        "normal": "Обычная",
+        "low": "Низкая",
+        "medium": "Средняя",
         "high": "Высокая"
       }
     },

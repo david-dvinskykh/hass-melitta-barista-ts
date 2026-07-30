@@ -8,7 +8,7 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util import dt as dt_util
 
-from .const import BREW_READY_PROCESSES
+from .const import BREW_READY_PROCESSES, DIRECTKEY_SLUGS, DirectKeyCategory
 from .coordinator import MelittaConfigEntry, MelittaCoordinator
 from .entity import MelittaEntity
 from .machine import MachineError
@@ -27,6 +27,10 @@ async def async_setup_entry(
             MelittaBrewProfileButton(coordinator),
             MelittaCancelButton(coordinator),
             MelittaSyncClockButton(coordinator),
+            *(
+                MelittaDirectKeyButton(coordinator, category)
+                for category in DirectKeyCategory
+            ),
         ]
     )
 
@@ -123,3 +127,36 @@ class MelittaSyncClockButton(MelittaEntity, ButtonEntity):
             await self.coordinator.async_set_clock(now.hour, now.minute)
         except MachineError as err:
             raise HomeAssistantError(f"Could not set the clock: {err}") from err
+
+
+class MelittaDirectKeyButton(MelittaEntity, ButtonEntity):
+    """One of the machine's front-panel direct-select keys.
+
+    Pressing it makes what the selected profile stores under that key, the
+    same as pressing the key on the machine — the staged brew settings are
+    not applied.
+    """
+
+    def __init__(
+        self, coordinator: MelittaCoordinator, category: DirectKeyCategory
+    ) -> None:
+        """Register a button for one direct key."""
+        slug = DIRECTKEY_SLUGS[category]
+        super().__init__(coordinator, f"key_{slug}")
+        self._category = category
+        self._attr_translation_key = f"key_{slug}"
+
+    @property
+    def available(self) -> bool:
+        """Offered while the machine is idle and the profiles are known."""
+        if not super().available or not self.coordinator.data.profile_names:
+            return False
+        status = self.coordinator.data.status
+        return status is not None and status.process in BREW_READY_PROCESSES
+
+    async def async_press(self) -> None:
+        """Brew this key from the selected profile."""
+        try:
+            await self.coordinator.async_press_direct_key(self._category)
+        except MachineError as err:
+            raise HomeAssistantError(f"Could not start brewing: {err}") from err

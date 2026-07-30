@@ -510,3 +510,78 @@ async def test_setup_defers_the_expensive_reads(
 
     assert client.machine.read_alphanumeric.await_count == 8
     assert client.machine.read_numerical.await_count > 25
+
+
+async def test_direct_key_buttons_mirror_the_front_panel(
+    hass: HomeAssistant, config_entry
+) -> None:
+    """One button per direct-select key the machine has."""
+    await _setup(hass, config_entry, _make_client())
+    await _poll_again(hass, config_entry)
+
+    keys = [
+        entity_id
+        for entity_id in hass.states.async_entity_ids("button")
+        if entity_id.endswith("_key")
+    ]
+    assert len(keys) == len(DirectKeyCategory)
+
+
+async def test_direct_key_button_brews_the_stored_recipe(
+    hass: HomeAssistant, config_entry
+) -> None:
+    """Pressing a key makes what the profile stores, ignoring staged settings.
+
+    A key on the front panel does not know about Home Assistant's staged
+    strength or cup size, so neither should its button.
+    """
+    client = _make_client()
+    await _setup(hass, config_entry, client)
+    await _poll_again(hass, config_entry)
+
+    await hass.services.async_call(
+        "select",
+        "select_option",
+        {
+            "entity_id": "select.melitta_barista_ts_smart_strength",
+            "option": "very_mild",
+        },
+        blocking=True,
+    )
+    await hass.services.async_call(
+        "button",
+        "press",
+        {"entity_id": "button.melitta_barista_ts_smart_cappuccino_key"},
+        blocking=True,
+    )
+
+    args, kwargs = client.machine.brew.await_args
+    assert args[0] == directkey_recipe_id(0, DirectKeyCategory.CAPPUCCINO)
+    assert kwargs["name"] == "Cappuccino"
+    # No overrides at all — the machine's own recipe values stand.
+    assert kwargs.keys() == {"name"}
+
+
+async def test_direct_key_button_follows_the_selected_profile(
+    hass: HomeAssistant, config_entry
+) -> None:
+    """The keys act on whichever profile is selected, like the machine does."""
+    client = _make_client()
+    await _setup(hass, config_entry, client)
+    await _poll_again(hass, config_entry)
+
+    await hass.services.async_call(
+        "select",
+        "select_option",
+        {"entity_id": "select.melitta_barista_ts_smart_profile", "option": "Anna"},
+        blocking=True,
+    )
+    await hass.services.async_call(
+        "button",
+        "press",
+        {"entity_id": "button.melitta_barista_ts_smart_espresso_key"},
+        blocking=True,
+    )
+
+    args, _ = client.machine.brew.await_args
+    assert args[0] == directkey_recipe_id(1, DirectKeyCategory.ESPRESSO)
