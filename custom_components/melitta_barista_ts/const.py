@@ -535,7 +535,11 @@ CONF_PAIRING_AGENT: Final = "pairing_agent"
 
 DEFAULT_POLL_INTERVAL: Final = 5.0
 DEFAULT_FRAME_TIMEOUT: Final = 5.0
-DEFAULT_CONNECT_TIMEOUT: Final = 20.0
+#: Generous, because bonding is the slow part: a plain connect through a
+#: Bluetooth proxy has been measured at around 20 s on this machine, and the
+#: Numeric Comparison exchange on top of it needs more still. Home Assistant
+#: gives a config entry 300 s to set up, which the whole ladder fits inside.
+DEFAULT_CONNECT_TIMEOUT: Final = 60.0
 DEFAULT_PAIRING_AGENT: Final = True
 
 #: Delay the vendor app inserts between the steps of the brew sequence.

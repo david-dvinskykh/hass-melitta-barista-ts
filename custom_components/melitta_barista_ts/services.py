@@ -104,6 +104,11 @@ READ_SETTING_SCHEMA = _DEVICE_SCHEMA.extend(
 #: short enough that a poll or a brew is not left queued behind it.
 MAX_SCAN_SPAN: Final = 128
 
+#: An unimplemented register is answered with silence, so a scan waits out
+#: this timeout for most of its reads. A register the machine does have
+#: comes back in a fraction of a second.
+SCAN_READ_TIMEOUT: Final = 2.0
+
 SCAN_SETTINGS_SCHEMA = _DEVICE_SCHEMA.extend(
     {
         vol.Required(ATTR_FIRST_ID): vol.All(
@@ -288,7 +293,7 @@ def async_setup_services(hass: HomeAssistant) -> None:
         for setting_id in range(first, last + 1):
             try:
                 values[str(setting_id)] = await coordinator.async_read_setting(
-                    setting_id
+                    setting_id, timeout=SCAN_READ_TIMEOUT
                 )
             except MachineError as err:
                 # An unassigned register is answered with a NACK, which is the

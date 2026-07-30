@@ -484,10 +484,12 @@ class MelittaCoordinator(DataUpdateCoordinator[MelittaData]):
         self.async_invalidate_settings()
         await self.async_request_refresh()
 
-    async def async_read_setting(self, setting_id: int) -> int:
+    async def async_read_setting(
+        self, setting_id: int, *, timeout: float | None = None
+    ) -> int:
         """Read a numerical register."""
         return await self.client.async_run(
-            self.client.machine.read_numerical, setting_id
+            self.client.machine.read_numerical, setting_id, timeout=timeout
         )
 
 

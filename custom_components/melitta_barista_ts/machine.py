@@ -259,10 +259,18 @@ class MelittaMachine:
         payload = await self._request(CMD_READ_VERSION, None, CMD_READ_VERSION)
         return payload.split(b"\x00", 1)[0].decode("utf-8", errors="replace").strip()
 
-    async def read_numerical(self, value_id: int) -> int:
-        """Read a numerical register (``HR``)."""
+    async def read_numerical(
+        self, value_id: int, *, timeout: float | None = None
+    ) -> int:
+        """Read a numerical register (``HR``).
+
+        ``timeout`` shortens the wait for one read. A register the machine
+        does not implement is answered with silence rather than a refusal,
+        so scanning a range at the full frame timeout would spend most of
+        its time waiting for answers that are never coming.
+        """
         payload = await self._request(
-            CMD_READ_NUMERICAL, _pack_id(value_id), CMD_READ_NUMERICAL
+            CMD_READ_NUMERICAL, _pack_id(value_id), CMD_READ_NUMERICAL, timeout=timeout
         )
         return NumericalValue.from_payload(payload).value
 
