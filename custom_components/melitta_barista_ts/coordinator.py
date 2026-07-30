@@ -15,18 +15,25 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 from .client import MelittaBleClient, MelittaConnectionError
 from .const import (
     CUP_COUNTER_BASE_ID,
+    DIRECTKEY_DISPLAY_NAMES,
     DOMAIN,
     MACHINE_TYPE_NAMES,
     MINUTES_PER_DAY,
+    MY_COFFEE_NAME,
+    MY_COFFEE_PROFILE,
     RECIPE_SLUGS,
     TOTAL_CUPS_ID,
     TS_ONLY_RECIPES,
     Blend,
     BrewTemperature,
+    DirectKeyCategory,
     Intensity,
     MachineType,
     RecipeId,
     SettingId,
+    directkey_recipe_id,
+    profile_name_id,
+    user_profile_count,
 )
 from .machine import MachineError
 from .protocol import MachineStatus, ProtocolError, RecipeComponent
@@ -79,6 +86,7 @@ class MelittaData:
     clock_minutes: int | None = None
     auto_off_after: int | None = None
     water_hardness: int | None = None
+    profile_names: dict[int, str] = field(default_factory=dict)
 
     @property
     def model_name(self) -> str:
@@ -116,6 +124,8 @@ class MelittaCoordinator(DataUpdateCoordinator[MelittaData]):
         self.data = MelittaData()
         self.brew_settings = BrewSettings()
         self.selected_drink: RecipeId = RecipeId.ESPRESSO
+        self.selected_profile: int = MY_COFFEE_PROFILE
+        self.selected_profile_drink: DirectKeyCategory = DirectKeyCategory.ESPRESSO
         self._settings_read_at: float | None = None
         self._counters_due = True
         self._unsub_status = client.add_status_listener(self._handle_pushed_status)
@@ -174,6 +184,7 @@ class MelittaCoordinator(DataUpdateCoordinator[MelittaData]):
         data.clock_minutes = await self._safe_read_numerical(SettingId.CLOCK)
         data.auto_off_after = await self._safe_read_numerical(SettingId.AUTO_OFF_AFTER)
         data.water_hardness = await self._safe_read_numerical(SettingId.WATER_HARDNESS)
+        await self._async_refresh_profiles(data)
 
     async def _async_refresh_counters(self, data: MelittaData) -> None:
         """Read the cup counters.
@@ -238,6 +249,88 @@ class MelittaCoordinator(DataUpdateCoordinator[MelittaData]):
         """Option values for the drink selector."""
         return [RECIPE_SLUGS[recipe] for recipe in self.available_drinks]
 
+    # -- profiles ---------------------------------------------------------
+
+    async def _async_refresh_profiles(self, data: MelittaData) -> None:
+        """Read the user profile names.
+
+        "My Coffee" (profile 0) has no name register — the machine labels it
+        itself. A profile the user has never named reads back empty, and gets
+        a positional placeholder so it still appears in the picker.
+        """
+        names: dict[int, str] = {MY_COFFEE_PROFILE: MY_COFFEE_NAME}
+
+        for profile in range(1, user_profile_count(data.machine_type) + 1):
+            try:
+                stored = await self.client.async_run(
+                    self.client.machine.read_alphanumeric, profile_name_id(profile)
+                )
+            except (MachineError, ProtocolError) as err:
+                _LOGGER.debug("Profile %s name unavailable: %s", profile, err)
+                stored = None
+            names[profile] = (stored or "").strip() or f"Profile {profile}"
+
+        data.profile_names = names
+
+    @property
+    def profile_options(self) -> list[str]:
+        """Labels for the profile selector, in machine order.
+
+        Profile names come from the machine, so two profiles can carry the
+        same name. Duplicates get their number appended, otherwise the
+        selector would silently collapse them onto one option.
+        """
+        labels: list[str] = []
+        seen: dict[str, int] = {}
+        for profile, name in sorted(self.data.profile_names.items()):
+            seen[name] = seen.get(name, 0) + 1
+            labels.append(name if seen[name] == 1 else f"{name} ({profile})")
+        return labels
+
+    def profile_for_option(self, option: str) -> int | None:
+        """Map a selector label back to its profile number."""
+        for profile, label in zip(
+            sorted(self.data.profile_names), self.profile_options, strict=True
+        ):
+            if label == option:
+                return profile
+        return None
+
+    @property
+    def selected_profile_option(self) -> str | None:
+        """The label currently shown by the profile selector."""
+        options = self.profile_options
+        order = sorted(self.data.profile_names)
+        if self.selected_profile in order:
+            return options[order.index(self.selected_profile)]
+        return None
+
+    @property
+    def selected_profile_name(self) -> str:
+        """Plain name of the selected profile, for logs and machine display."""
+        return self.data.profile_names.get(
+            self.selected_profile, f"Profile {self.selected_profile}"
+        )
+
+    async def async_select_profile(self, profile: int) -> None:
+        """Switch the active profile and reload the selected direct key."""
+        self.selected_profile = profile
+        await self.async_select_profile_drink(self.selected_profile_drink)
+
+    async def async_select_profile_drink(self, category: DirectKeyCategory) -> None:
+        """Select a direct key and seed the brew settings from its recipe."""
+        self.selected_profile_drink = category
+        recipe_id = directkey_recipe_id(self.selected_profile, category)
+        try:
+            stored = await self.client.async_run(
+                self.client.machine.read_recipe, recipe_id
+            )
+        except (MachineError, ProtocolError) as err:
+            _LOGGER.debug("Could not read direct key %s: %s", recipe_id, err)
+        else:
+            self.brew_settings.seed_from(stored.component1)
+        self.async_update_listeners()
+
     # -- commands ---------------------------------------------------------
 
     async def async_select_drink(self, recipe: RecipeId) -> None:
@@ -264,12 +357,68 @@ class MelittaCoordinator(DataUpdateCoordinator[MelittaData]):
         blend: Blend | None = None,
     ) -> None:
         """Brew a drink, defaulting every parameter to the current settings."""
-        settings = self.brew_settings
         target = recipe if recipe is not None else self.selected_drink
+
+        await self._async_brew_slot(
+            int(target),
+            name=None,
+            two_cups=two_cups,
+            intensity=intensity,
+            temperature=temperature,
+            portion_ml=portion_ml,
+            blend=blend,
+        )
+
+    async def async_brew_profile(
+        self,
+        profile: int | None = None,
+        category: DirectKeyCategory | None = None,
+        *,
+        two_cups: bool | None = None,
+        intensity: Intensity | None = None,
+        temperature: BrewTemperature | None = None,
+        portion_ml: int | None = None,
+        blend: Blend | None = None,
+    ) -> None:
+        """Brew the drink a profile stores under one of its direct keys."""
+        target_profile = self.selected_profile if profile is None else profile
+        target_category = self.selected_profile_drink if category is None else category
+
+        known = self.data.profile_names
+        if known and target_profile not in known:
+            raise MachineError(
+                f"this machine has no profile {target_profile} "
+                f"(it has {min(known)} to {max(known)})"
+            )
+
+        await self._async_brew_slot(
+            directkey_recipe_id(target_profile, target_category),
+            name=DIRECTKEY_DISPLAY_NAMES[target_category],
+            two_cups=two_cups,
+            intensity=intensity,
+            temperature=temperature,
+            portion_ml=portion_ml,
+            blend=blend,
+        )
+
+    async def _async_brew_slot(
+        self,
+        recipe_id: int,
+        *,
+        name: str | None,
+        two_cups: bool | None,
+        intensity: Intensity | None,
+        temperature: BrewTemperature | None,
+        portion_ml: int | None,
+        blend: Blend | None,
+    ) -> None:
+        """Brew a recipe slot, filling unset parameters from the staged settings."""
+        settings = self.brew_settings
 
         await self.client.async_run(
             self.client.machine.brew,
-            target,
+            recipe_id,
+            name=name,
             two_cups=settings.two_cups if two_cups is None else two_cups,
             intensity=int(settings.intensity if intensity is None else intensity),
             temperature=int(

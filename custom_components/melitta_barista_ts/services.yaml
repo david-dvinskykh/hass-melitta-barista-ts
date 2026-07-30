@@ -77,6 +77,15 @@ brew:
             - recipe_default
             - hopper_1
             - hopper_2
+    profile:
+      required: false
+      example: 2
+      selector:
+        number:
+          min: 0
+          max: 8
+          step: 1
+          mode: box
 
 cancel:
   target:

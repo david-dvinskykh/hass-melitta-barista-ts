@@ -40,25 +40,58 @@
   },
   "entity": {
     "binary_sensor": {
-      "brewing": { "name": "Приготовление" },
-      "maintenance": { "name": "Обслуживание" },
-      "water_tank_empty": { "name": "Бак для воды пуст" },
-      "trays_full": { "name": "Поддоны переполнены" },
-      "trays_missing": { "name": "Поддоны не установлены" },
-      "brew_unit_removed": { "name": "Заварочный блок снят" },
-      "powder_lid_open": { "name": "Крышка отсека для молотого кофе открыта" },
-      "beans_empty_hopper_1": { "name": "Контейнер для зёрен 1 пуст" },
-      "beans_empty_hopper_2": { "name": "Контейнер для зёрен 2 пуст" },
-      "easy_clean_required": { "name": "Требуется Easy Clean" }
+      "brewing": {
+        "name": "Приготовление"
+      },
+      "maintenance": {
+        "name": "Обслуживание"
+      },
+      "water_tank_empty": {
+        "name": "Бак для воды пуст"
+      },
+      "trays_full": {
+        "name": "Поддоны переполнены"
+      },
+      "trays_missing": {
+        "name": "Поддоны не установлены"
+      },
+      "brew_unit_removed": {
+        "name": "Заварочный блок снят"
+      },
+      "powder_lid_open": {
+        "name": "Крышка отсека для молотого кофе открыта"
+      },
+      "beans_empty_hopper_1": {
+        "name": "Контейнер для зёрен 1 пуст"
+      },
+      "beans_empty_hopper_2": {
+        "name": "Контейнер для зёрен 2 пуст"
+      },
+      "easy_clean_required": {
+        "name": "Требуется Easy Clean"
+      }
     },
     "button": {
-      "brew": { "name": "Приготовить" },
-      "cancel": { "name": "Отменить" },
-      "sync_clock": { "name": "Синхронизировать часы" }
+      "brew": {
+        "name": "Приготовить"
+      },
+      "cancel": {
+        "name": "Отменить"
+      },
+      "sync_clock": {
+        "name": "Синхронизировать часы"
+      },
+      "brew_profile": {
+        "name": "Приготовить из профиля"
+      }
     },
     "number": {
-      "portion": { "name": "Объём порции" },
-      "auto_off_after": { "name": "Автовыключение через" }
+      "portion": {
+        "name": "Объём порции"
+      },
+      "auto_off_after": {
+        "name": "Автовыключение через"
+      }
     },
     "select": {
       "drink": {
@@ -115,6 +148,21 @@
           "hopper_1": "Контейнер 1",
           "hopper_2": "Контейнер 2"
         }
+      },
+      "profile": {
+        "name": "Профиль"
+      },
+      "profile_drink": {
+        "name": "Напиток профиля",
+        "state": {
+          "espresso": "Эспрессо",
+          "cafe_creme": "Кафе-крема",
+          "cappuccino": "Капучино",
+          "latte_macchiato": "Латте макиато",
+          "milk_froth": "Молочная пена",
+          "milk": "Молоко",
+          "hot_water": "Горячая вода"
+        }
       }
     },
     "sensor": {
@@ -161,14 +209,26 @@
           "unknown_state": "Неизвестно"
         }
       },
-      "progress": { "name": "Прогресс" },
-      "total_cups": { "name": "Всего напитков" },
-      "clock": { "name": "Часы кофемашины" },
-      "firmware": { "name": "Прошивка" },
-      "drink_cups": { "name": "{drink}: количество" }
+      "progress": {
+        "name": "Прогресс"
+      },
+      "total_cups": {
+        "name": "Всего напитков"
+      },
+      "clock": {
+        "name": "Часы кофемашины"
+      },
+      "firmware": {
+        "name": "Прошивка"
+      },
+      "drink_cups": {
+        "name": "{drink}: количество"
+      }
     },
     "switch": {
-      "two_cups": { "name": "Две чашки" }
+      "two_cups": {
+        "name": "Две чашки"
+      }
     }
   },
   "selector": {
@@ -252,6 +312,10 @@
         "bean_hopper": {
           "name": "Контейнер для зёрен",
           "description": "Из какого контейнера молоть зёрна. Учитывается только машинами с двумя контейнерами."
+        },
+        "profile": {
+          "name": "Профиль",
+          "description": "Приготовить из пользовательского профиля вместо встроенного рецепта. 0 — My Coffee, 1-8 — именованные профили. В профиле хранятся только семь напитков прямого выбора."
         }
       }
     },

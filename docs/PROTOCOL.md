@@ -239,6 +239,39 @@ only on the TS.
 Slot 400 is the brewing scratch slot; text slot 401 holds the name shown on
 the display while brewing.
 
+## User profiles (direct-key slots)
+
+Besides the 24-drink menu, the machine stores per-profile drinks — one for
+each direct-select key on its front panel. These live in blocks of ten:
+
+```
+recipe id = 302 + profile * 10 + category
+```
+
+`profile` is 0 for the unnamed default the machine calls "My Coffee", then 1
+upwards for the user profiles (eight on the TS, four on the T). `category` is
+one of:
+
+| Value | Direct key |
+|---|---|
+| 0 | Espresso |
+| 1 | Café Crème |
+| 2 | Cappuccino |
+| 3 | Latte Macchiato |
+| 4 | Milk Froth |
+| 5 | Milk |
+| 6 | Hot Water |
+
+Profile names are text registers at the start of the same block:
+`310 + (profile - 1) * 10`, so profile 1 is 310, profile 2 is 320. Profile 0
+has no name register.
+
+Direct-key slots read back through `HC` in exactly the same shape as the
+built-in recipes, so brewing one is the same four-step sequence with a
+different source id. The one difference is the display name: there is no
+built-in name for a profile slot, so the category label is written to slot
+401 instead.
+
 ## Numerical registers (`HR` / `HW`)
 
 | ID | Meaning |
@@ -267,6 +300,14 @@ confirmed, which is why the integration exposes them only through the raw
 Verified against this implementation's tests and consistent across the
 sources: framing, checksum, RC4, handshake, status layout, recipe layout,
 brew sequence, recipe/counter IDs.
+
+Lower confidence: the direct-key and profile-name register formulas. Unlike
+the rest of this document they are not corroborated by a captured exchange —
+they come from the constant tables of the reference implementation, and the
+block arithmetic is inferred from those tables rather than observed. The
+layout is self-consistent (name at the block start, seven drinks after it,
+stride of ten) and the slots parse as ordinary recipes, but a machine with a
+different profile count could disagree.
 
 Not verified here (no hardware in the loop): the exact write characteristic
 per firmware, `HF`/`HL`/`HP`/`HQ` contents, and the value encodings noted

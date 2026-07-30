@@ -313,6 +313,80 @@ FREESTYLE_NAME_ID: Final = 401
 #: ``HE`` process argument selecting "make a drink".
 PROCESS_PRODUCT: Final = 4
 
+# --------------------------------------------------------------------------
+# User profiles (DirectKey slots)
+# --------------------------------------------------------------------------
+
+
+class DirectKeyCategory(IntEnum):
+    """The seven drink slots every profile stores.
+
+    A profile does not hold all 24 recipes — it holds one drink per
+    direct-select key on the machine's front panel.
+    """
+
+    ESPRESSO = 0
+    CAFE_CREME = 1
+    CAPPUCCINO = 2
+    LATTE_MACCHIATO = 3
+    MILK_FROTH = 4
+    MILK = 5
+    WATER = 6
+
+
+#: Direct-key recipes are laid out in blocks of ten, one block per profile:
+#: ``302 + profile * 10 + category``.
+DIRECTKEY_BASE_ID: Final = 302
+PROFILE_STRIDE: Final = 10
+
+#: Profile names live in the same block, at its start — profile 1 at 310.
+#: Profile 0 has no stored name; the machine calls it "My Coffee".
+PROFILE_NAME_BASE_ID: Final = 310
+MY_COFFEE_PROFILE: Final = 0
+MY_COFFEE_NAME: Final = "My Coffee"
+
+
+def directkey_recipe_id(profile: int, category: DirectKeyCategory) -> int:
+    """Return the recipe slot holding ``category`` for ``profile``."""
+    return DIRECTKEY_BASE_ID + profile * PROFILE_STRIDE + int(category)
+
+
+def profile_name_id(profile: int) -> int:
+    """Return the text register holding a user profile's name.
+
+    Only valid for profiles 1 and up — "My Coffee" has no stored name.
+    """
+    if profile < 1:
+        raise ValueError(f"profile {profile} has no name register")
+    return PROFILE_NAME_BASE_ID + (profile - 1) * PROFILE_STRIDE
+
+
+#: Direct-key slugs deliberately reuse the built-in recipe slugs, so a drink
+#: means the same thing whether it comes from the menu or from a profile.
+DIRECTKEY_SLUGS: Final[dict[DirectKeyCategory, str]] = {
+    DirectKeyCategory.ESPRESSO: "espresso",
+    DirectKeyCategory.CAFE_CREME: "cafe_creme",
+    DirectKeyCategory.CAPPUCCINO: "cappuccino",
+    DirectKeyCategory.LATTE_MACCHIATO: "latte_macchiato",
+    DirectKeyCategory.MILK_FROTH: "milk_froth",
+    DirectKeyCategory.MILK: "milk",
+    DirectKeyCategory.WATER: "hot_water",
+}
+SLUG_TO_DIRECTKEY: Final[dict[str, DirectKeyCategory]] = {
+    slug: category for category, slug in DIRECTKEY_SLUGS.items()
+}
+
+#: Labels written to the machine's display when brewing from a profile.
+DIRECTKEY_DISPLAY_NAMES: Final[dict[DirectKeyCategory, str]] = {
+    DirectKeyCategory.ESPRESSO: "Espresso",
+    DirectKeyCategory.CAFE_CREME: "Cafe Creme",
+    DirectKeyCategory.CAPPUCCINO: "Cappuccino",
+    DirectKeyCategory.LATTE_MACCHIATO: "Latte Macchiato",
+    DirectKeyCategory.MILK_FROTH: "Milk Froth",
+    DirectKeyCategory.MILK: "Milk",
+    DirectKeyCategory.WATER: "Hot Water",
+}
+
 
 class ComponentProcess(IntEnum):
     """What a recipe component dispenses."""
@@ -417,6 +491,26 @@ MACHINE_TYPE_NAMES: Final[dict[MachineType, str]] = {
     MachineType.BARISTA_TS: "Barista TS Smart",
 }
 
+#: User profiles per model, excluding "My Coffee". The TS keeps eight, the
+#: single-hopper T four.
+USER_PROFILE_COUNTS: Final[dict[MachineType, int]] = {
+    MachineType.BARISTA_T: 4,
+    MachineType.BARISTA_TS: 8,
+}
+MAX_USER_PROFILES: Final = 8
+
+
+def user_profile_count(machine_type: MachineType | None) -> int:
+    """Return how many named user profiles a model offers.
+
+    Assumes the larger TS set until the model has been read, so profiles are
+    not hidden from a machine that simply has not answered yet.
+    """
+    if machine_type is None:
+        return MAX_USER_PROFILES
+    return USER_PROFILE_COUNTS.get(machine_type, MAX_USER_PROFILES)
+
+
 #: Per-drink cup counters live at ``CUP_COUNTER_BASE_ID + recipe_type``.
 CUP_COUNTER_BASE_ID: Final = 100
 TOTAL_CUPS_ID: Final = 150
@@ -459,6 +553,7 @@ ATTR_INTENSITY: Final = "intensity"
 ATTR_TEMPERATURE: Final = "temperature"
 ATTR_PORTION_ML: Final = "portion_ml"
 ATTR_BEAN_HOPPER: Final = "bean_hopper"
+ATTR_PROFILE: Final = "profile"
 ATTR_SETTING_ID: Final = "setting_id"
 ATTR_VALUE: Final = "value"
 ATTR_TIME: Final = "time"

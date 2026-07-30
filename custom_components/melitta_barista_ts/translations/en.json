@@ -40,25 +40,58 @@
   },
   "entity": {
     "binary_sensor": {
-      "brewing": { "name": "Brewing" },
-      "maintenance": { "name": "Maintenance running" },
-      "water_tank_empty": { "name": "Water tank empty" },
-      "trays_full": { "name": "Trays full" },
-      "trays_missing": { "name": "Trays missing" },
-      "brew_unit_removed": { "name": "Brew unit removed" },
-      "powder_lid_open": { "name": "Powder lid open" },
-      "beans_empty_hopper_1": { "name": "Bean hopper 1 empty" },
-      "beans_empty_hopper_2": { "name": "Bean hopper 2 empty" },
-      "easy_clean_required": { "name": "Easy Clean required" }
+      "brewing": {
+        "name": "Brewing"
+      },
+      "maintenance": {
+        "name": "Maintenance running"
+      },
+      "water_tank_empty": {
+        "name": "Water tank empty"
+      },
+      "trays_full": {
+        "name": "Trays full"
+      },
+      "trays_missing": {
+        "name": "Trays missing"
+      },
+      "brew_unit_removed": {
+        "name": "Brew unit removed"
+      },
+      "powder_lid_open": {
+        "name": "Powder lid open"
+      },
+      "beans_empty_hopper_1": {
+        "name": "Bean hopper 1 empty"
+      },
+      "beans_empty_hopper_2": {
+        "name": "Bean hopper 2 empty"
+      },
+      "easy_clean_required": {
+        "name": "Easy Clean required"
+      }
     },
     "button": {
-      "brew": { "name": "Brew" },
-      "cancel": { "name": "Cancel" },
-      "sync_clock": { "name": "Sync clock" }
+      "brew": {
+        "name": "Brew"
+      },
+      "cancel": {
+        "name": "Cancel"
+      },
+      "sync_clock": {
+        "name": "Sync clock"
+      },
+      "brew_profile": {
+        "name": "Brew from profile"
+      }
     },
     "number": {
-      "portion": { "name": "Cup size" },
-      "auto_off_after": { "name": "Switch off after" }
+      "portion": {
+        "name": "Cup size"
+      },
+      "auto_off_after": {
+        "name": "Switch off after"
+      }
     },
     "select": {
       "drink": {
@@ -115,6 +148,21 @@
           "hopper_1": "Hopper 1",
           "hopper_2": "Hopper 2"
         }
+      },
+      "profile": {
+        "name": "Profile"
+      },
+      "profile_drink": {
+        "name": "Profile drink",
+        "state": {
+          "espresso": "Espresso",
+          "cafe_creme": "Café Crème",
+          "cappuccino": "Cappuccino",
+          "latte_macchiato": "Latte Macchiato",
+          "milk_froth": "Milk froth",
+          "milk": "Milk",
+          "hot_water": "Hot water"
+        }
       }
     },
     "sensor": {
@@ -161,14 +209,26 @@
           "unknown_state": "Unknown"
         }
       },
-      "progress": { "name": "Progress" },
-      "total_cups": { "name": "Total drinks" },
-      "clock": { "name": "Machine clock" },
-      "firmware": { "name": "Firmware" },
-      "drink_cups": { "name": "{drink} count" }
+      "progress": {
+        "name": "Progress"
+      },
+      "total_cups": {
+        "name": "Total drinks"
+      },
+      "clock": {
+        "name": "Machine clock"
+      },
+      "firmware": {
+        "name": "Firmware"
+      },
+      "drink_cups": {
+        "name": "{drink} count"
+      }
     },
     "switch": {
-      "two_cups": { "name": "Two cups" }
+      "two_cups": {
+        "name": "Two cups"
+      }
     }
   },
   "selector": {
@@ -252,6 +312,10 @@
         "bean_hopper": {
           "name": "Bean hopper",
           "description": "Which bean hopper to grind from. Only dual-hopper machines act on this."
+        },
+        "profile": {
+          "name": "Profile",
+          "description": "Brew from a user profile instead of the built-in recipe. 0 is My Coffee, 1-8 are the named profiles. A profile only stores the seven direct-select drinks."
         }
       }
     },

@@ -15,15 +15,9 @@ from homeassistant.core import (
     callback,
 )
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
-from homeassistant.helpers import (
-    config_validation as cv,
-)
-from homeassistant.helpers import (
-    device_registry as dr,
-)
-from homeassistant.helpers import (
-    entity_registry as er,
-)
+from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import entity_registry as er
 from homeassistant.util import dt as dt_util
 
 from .const import (
@@ -31,12 +25,14 @@ from .const import (
     ATTR_DRINK,
     ATTR_INTENSITY,
     ATTR_PORTION_ML,
+    ATTR_PROFILE,
     ATTR_SETTING_ID,
     ATTR_TEMPERATURE,
     ATTR_TIME,
     ATTR_TWO_CUPS,
     ATTR_VALUE,
     DOMAIN,
+    MAX_USER_PROFILES,
     PORTION_MAX_ML,
     PORTION_MIN_ML,
     SERVICE_BREW,
@@ -45,6 +41,7 @@ from .const import (
     SERVICE_SET_CLOCK,
     SERVICE_WRITE_SETTING,
     SLUG_TO_BLEND,
+    SLUG_TO_DIRECTKEY,
     SLUG_TO_INTENSITY,
     SLUG_TO_RECIPE,
     SLUG_TO_TEMPERATURE,
@@ -72,6 +69,9 @@ BREW_SCHEMA = _DEVICE_SCHEMA.extend(
             vol.Coerce(int), vol.Range(min=PORTION_MIN_ML, max=PORTION_MAX_ML)
         ),
         vol.Optional(ATTR_BEAN_HOPPER): vol.In(sorted(SLUG_TO_BLEND)),
+        vol.Optional(ATTR_PROFILE): vol.All(
+            vol.Coerce(int), vol.Range(min=0, max=MAX_USER_PROFILES)
+        ),
     }
 )
 
@@ -178,19 +178,37 @@ def async_setup_services(hass: HomeAssistant) -> None:
         intensity = call.data.get(ATTR_INTENSITY)
         temperature = call.data.get(ATTR_TEMPERATURE)
         hopper = call.data.get(ATTR_BEAN_HOPPER)
+        profile = call.data.get(ATTR_PROFILE)
+
+        # A profile stores one drink per direct-select key, not the whole
+        # menu, so only those seven drinks can be brewed from one.
+        if profile is not None and drink is not None and drink not in SLUG_TO_DIRECTKEY:
+            raise ServiceValidationError(
+                f"'{drink}' is not stored in a profile. Profiles hold "
+                f"{', '.join(sorted(SLUG_TO_DIRECTKEY))} — brew '{drink}' "
+                "without a profile to use the built-in recipe."
+            )
+
+        overrides = {
+            "two_cups": call.data.get(ATTR_TWO_CUPS),
+            "intensity": SLUG_TO_INTENSITY[intensity] if intensity else None,
+            "temperature": SLUG_TO_TEMPERATURE[temperature] if temperature else None,
+            "portion_ml": call.data.get(ATTR_PORTION_ML),
+            "blend": SLUG_TO_BLEND[hopper] if hopper else None,
+        }
 
         for coordinator in _coordinators(hass, call):
             try:
-                await coordinator.async_brew(
-                    SLUG_TO_RECIPE[drink] if drink else None,
-                    two_cups=call.data.get(ATTR_TWO_CUPS),
-                    intensity=SLUG_TO_INTENSITY[intensity] if intensity else None,
-                    temperature=(
-                        SLUG_TO_TEMPERATURE[temperature] if temperature else None
-                    ),
-                    portion_ml=call.data.get(ATTR_PORTION_ML),
-                    blend=SLUG_TO_BLEND[hopper] if hopper else None,
-                )
+                if profile is None:
+                    await coordinator.async_brew(
+                        SLUG_TO_RECIPE[drink] if drink else None, **overrides
+                    )
+                else:
+                    await coordinator.async_brew_profile(
+                        profile,
+                        SLUG_TO_DIRECTKEY[drink] if drink else None,
+                        **overrides,
+                    )
             except MachineError as err:
                 raise HomeAssistantError(f"Could not start brewing: {err}") from err
 

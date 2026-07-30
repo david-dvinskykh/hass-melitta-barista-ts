@@ -20,7 +20,8 @@ select = ["E", "F", "W", "I", "UP", "B", "D", "SIM", "RUF"]
 # D401 rejects "True when …" docstrings on boolean helpers, which read
 # better than an imperative rephrasing. RUF012 wants ClassVar on the
 # _attr_options lists Home Assistant entities declare as plain attributes.
-ignore = ["D203", "D213", "D401", "RUF012"]
+# RUF002 flags en dashes in prose ranges, which are correct typography.
+ignore = ["D203", "D213", "D401", "RUF002", "RUF012"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["D100", "D101", "D102", "D103", "D104", "D107"]

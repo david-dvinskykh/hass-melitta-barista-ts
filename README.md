@@ -9,8 +9,9 @@ link the Melitta Connect app uses. No cloud, no account, no vendor app.
 
 ## What it does
 
-- **Brews** any of the 24 built-in drinks, optionally overriding strength,
-  brew temperature, cup size, bean hopper and two-cup mode per brew.
+- **Brews** any of the 24 built-in drinks, or the drinks stored in a user
+  profile, optionally overriding strength, brew temperature, cup size, bean
+  hopper and two-cup mode per brew.
 - **Reports** live status: process, current step, progress, and what the
   machine is waiting for (water, trays, brew unit, beans, Easy Clean).
 - **Counts** drinks — total and per drink type.
@@ -80,11 +81,12 @@ bluetoothctl
 | Brewing, Maintenance running | binary sensor | |
 | Water tank empty, Trays full, Trays missing, Brew unit removed, Powder lid open, Bean hopper 1/2 empty, Easy Clean required | binary sensor | Problem class |
 | Drink | select | What the Brew button makes |
+| Profile, Profile drink | select | What the Brew from profile button makes |
 | Strength, Brew temperature, Bean hopper | select | Applied to the next brew |
 | Cup size | number | Millilitres, 5 ml steps |
 | Two cups | switch | Applied to the next brew |
 | Switch off after | number | Written to the machine |
-| Brew, Cancel, Sync clock | button | |
+| Brew, Brew from profile, Cancel, Sync clock | button | |
 
 Selecting a drink reads that recipe from the machine and loads its stored
 strength, temperature and cup size into the corresponding entities — so the
@@ -92,6 +94,20 @@ staged values always start from what the machine itself would do. Change one
 and only that field is overridden; the rest of the recipe is left alone.
 
 Nothing is sent to the machine until you brew.
+
+### Profiles
+
+The machine keeps a set of drinks per user profile — one for each
+direct-select key, so seven per profile rather than the full menu. **Profile**
+lists what the machine has stored (its names are read from the machine, so
+renaming a profile there renames the option here), **Profile drink** picks
+which of the seven to make, and **Brew from profile** starts it.
+
+"My Coffee" is the machine's own name for the unnamed default profile. The
+Barista TS keeps eight user profiles on top of it, the Barista T four.
+
+The plain **Brew** button is unaffected — it always uses the built-in
+recipes, which cover all 24 drinks.
 
 ## Services
 
@@ -111,6 +127,22 @@ data:
   two_cups: false
   bean_hopper: hopper_2
 ```
+
+Add `profile` to brew that profile's version of the drink instead of the
+built-in recipe — `0` for My Coffee, `1`–`8` for the user profiles:
+
+```yaml
+action: melitta_barista_ts.brew
+target:
+  device_id: abc123
+data:
+  profile: 2
+  drink: latte_macchiato
+```
+
+Because a profile only stores the seven direct-select drinks, combining
+`profile` with something like `flat_white` is rejected with an explanatory
+error rather than silently brewing something else.
 
 ### `melitta_barista_ts.cancel`
 

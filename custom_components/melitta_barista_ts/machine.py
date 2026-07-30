@@ -333,19 +333,25 @@ class MelittaMachine:
         self,
         recipe_id: RecipeId | int,
         *,
+        name: str | None = None,
         two_cups: bool = False,
         intensity: int | None = None,
         temperature: int | None = None,
         portion_ml: int | None = None,
         blend: int | None = None,
     ) -> None:
-        """Brew a drink.
+        """Brew a drink from any recipe slot.
 
         Sending ``HE`` on its own is acknowledged but does nothing. The
         machine brews whatever sits in its scratch slot, so the vendor
         sequence has to be replayed: read the stored recipe, copy it (with
         any overrides applied) into the scratch slot, set the name shown on
         the display, then start the process.
+
+        ``recipe_id`` is either a built-in recipe (200–223) or a profile's
+        direct-key slot; both read back in the same shape. ``name`` overrides
+        the label shown on the machine while it brews, which the built-in
+        table cannot supply for profile slots.
         """
         recipe = await self.read_recipe(int(recipe_id))
 
@@ -369,7 +375,9 @@ class MelittaMachine:
         )
         await asyncio.sleep(BREW_STEP_DELAY)
 
-        await self.write_alphanumeric(FREESTYLE_NAME_ID, _display_name(recipe_id))
+        await self.write_alphanumeric(
+            FREESTYLE_NAME_ID, name if name else _display_name(recipe_id)
+        )
         await asyncio.sleep(BREW_STEP_DELAY)
 
         await self.start_process(PROCESS_PRODUCT, two_cups=two_cups)

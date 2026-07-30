@@ -8,6 +8,7 @@ import pytest
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import CONF_ADDRESS, STATE_UNAVAILABLE
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.melitta_barista_ts.client import MelittaConnectionError
@@ -15,8 +16,12 @@ from custom_components.melitta_barista_ts.const import (
     DOMAIN,
     SERVICE_BREW,
     SERVICE_CANCEL,
+    DirectKeyCategory,
     Intensity,
+    MachineType,
     RecipeId,
+    directkey_recipe_id,
+    profile_name_id,
 )
 from custom_components.melitta_barista_ts.protocol import (
     MachineRecipe,
@@ -51,12 +56,24 @@ ESPRESSO = MachineRecipe(
 )
 
 
+#: Profile 1 is named, the rest were never given one and read back empty.
+PROFILE_NAMES = {1: "Anna"}
+
+
 def _make_client(status: MachineStatus = READY) -> MagicMock:
     """A stand-in for the BLE client that answers from memory."""
+
+    async def _read_alphanumeric(value_id: int) -> str:
+        for profile, name in PROFILE_NAMES.items():
+            if profile_name_id(profile) == value_id:
+                return name
+        return ""
+
     machine = MagicMock()
     machine.read_status = AsyncMock(return_value=status)
     machine.read_firmware = AsyncMock(return_value="EF_1.00R4__386")
     machine.read_recipe = AsyncMock(return_value=ESPRESSO)
+    machine.read_alphanumeric = AsyncMock(side_effect=_read_alphanumeric)
     machine.read_numerical = AsyncMock(return_value=7)
     machine.write_numerical = AsyncMock()
     machine.brew = AsyncMock()
@@ -189,7 +206,7 @@ async def test_brew_button_starts_the_selected_drink(
 
     client.machine.brew.assert_awaited_once()
     args, kwargs = client.machine.brew.await_args
-    assert args[0] is RecipeId.ESPRESSO
+    assert args[0] == int(RecipeId.ESPRESSO)
     assert kwargs["two_cups"] is False
 
 
@@ -288,7 +305,7 @@ async def test_brew_service_overrides_staged_settings(
 
     _, kwargs = client.machine.brew.await_args
     args, _ = client.machine.brew.await_args
-    assert args[0] is RecipeId.FLAT_WHITE
+    assert args[0] == int(RecipeId.FLAT_WHITE)
     assert kwargs["intensity"] == int(Intensity.VERY_STRONG)
     assert kwargs["portion_ml"] == 200
 
@@ -307,3 +324,156 @@ async def test_cancel_service_stops_the_current_process(
     )
 
     client.machine.cancel_process.assert_awaited_once_with(4)
+
+
+# --------------------------------------------------------------------------
+# Profiles
+# --------------------------------------------------------------------------
+
+
+async def test_profile_options_come_from_the_machine(
+    hass: HomeAssistant, config_entry
+) -> None:
+    """Named profiles show their name; unnamed ones get a placeholder."""
+    await _setup(hass, config_entry, _make_client())
+
+    state = hass.states.get("select.melitta_barista_ts_smart_profile")
+    assert state.state == "My Coffee"
+    assert state.attributes["options"][:3] == ["My Coffee", "Anna", "Profile 2"]
+
+
+async def test_profile_count_follows_the_model(
+    hass: HomeAssistant, config_entry
+) -> None:
+    """A Barista T offers four user profiles, the TS eight."""
+    client = _make_client()
+    client.machine.read_numerical = AsyncMock(return_value=int(MachineType.BARISTA_T))
+    await _setup(hass, config_entry, client)
+
+    options = hass.states.get("select.melitta_barista_ts_smart_profile").attributes[
+        "options"
+    ]
+    assert len(options) == 5  # My Coffee + four user profiles
+
+
+async def test_selecting_a_profile_reads_its_direct_key(
+    hass: HomeAssistant, config_entry
+) -> None:
+    """Switching profile reloads the currently selected direct key from it."""
+    client = _make_client()
+    await _setup(hass, config_entry, client)
+
+    await hass.services.async_call(
+        "select",
+        "select_option",
+        {"entity_id": "select.melitta_barista_ts_smart_profile", "option": "Anna"},
+        blocking=True,
+    )
+
+    client.machine.read_recipe.assert_awaited_with(
+        directkey_recipe_id(1, DirectKeyCategory.ESPRESSO)
+    )
+
+
+async def test_profile_brew_button_uses_the_direct_key_slot(
+    hass: HomeAssistant, config_entry
+) -> None:
+    """Brewing from a profile targets that profile's direct-key recipe."""
+    client = _make_client()
+    await _setup(hass, config_entry, client)
+
+    await hass.services.async_call(
+        "select",
+        "select_option",
+        {"entity_id": "select.melitta_barista_ts_smart_profile", "option": "Anna"},
+        blocking=True,
+    )
+    await hass.services.async_call(
+        "select",
+        "select_option",
+        {
+            "entity_id": "select.melitta_barista_ts_smart_profile_drink",
+            "option": "cappuccino",
+        },
+        blocking=True,
+    )
+    await hass.services.async_call(
+        "button",
+        "press",
+        {"entity_id": "button.melitta_barista_ts_smart_brew_from_profile"},
+        blocking=True,
+    )
+
+    args, kwargs = client.machine.brew.await_args
+    assert args[0] == directkey_recipe_id(1, DirectKeyCategory.CAPPUCCINO)
+    assert kwargs["name"] == "Cappuccino"
+
+
+async def test_brew_service_accepts_a_profile(
+    hass: HomeAssistant, config_entry
+) -> None:
+    """The service can target a profile without touching the selectors."""
+    client = _make_client()
+    await _setup(hass, config_entry, client)
+
+    await hass.services.async_call(
+        DOMAIN,
+        SERVICE_BREW,
+        {
+            "entity_id": "button.melitta_barista_ts_smart_brew",
+            "profile": 3,
+            "drink": "latte_macchiato",
+        },
+        blocking=True,
+    )
+
+    args, _ = client.machine.brew.await_args
+    assert args[0] == directkey_recipe_id(3, DirectKeyCategory.LATTE_MACCHIATO)
+    # The selectors are untouched by a one-off service call.
+    profile = hass.states.get("select.melitta_barista_ts_smart_profile")
+    assert profile.state == "My Coffee"
+
+
+async def test_brew_service_rejects_a_drink_no_profile_stores(
+    hass: HomeAssistant, config_entry
+) -> None:
+    """Profiles hold seven direct keys, not the whole 24-drink menu."""
+    client = _make_client()
+    await _setup(hass, config_entry, client)
+
+    with pytest.raises(ServiceValidationError, match="not stored in a profile"):
+        await hass.services.async_call(
+            DOMAIN,
+            SERVICE_BREW,
+            {
+                "entity_id": "button.melitta_barista_ts_smart_brew",
+                "profile": 1,
+                "drink": "flat_white",
+            },
+            blocking=True,
+        )
+
+    client.machine.brew.assert_not_awaited()
+
+
+async def test_brew_service_rejects_a_profile_the_machine_lacks(
+    hass: HomeAssistant, config_entry
+) -> None:
+    """A Barista T has four user profiles, so profile 7 does not exist."""
+    client = _make_client()
+    client.machine.read_numerical = AsyncMock(return_value=int(MachineType.BARISTA_T))
+    await _setup(hass, config_entry, client)
+
+    with pytest.raises(HomeAssistantError, match="no profile 7"):
+        await hass.services.async_call(
+            DOMAIN,
+            SERVICE_BREW,
+            {
+                "entity_id": "button.melitta_barista_ts_smart_brew",
+                "profile": 7,
+                "drink": "espresso",
+            },
+            blocking=True,
+        )
+
+    client.machine.brew.assert_not_awaited()

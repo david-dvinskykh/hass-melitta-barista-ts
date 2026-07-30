@@ -24,6 +24,7 @@ async def async_setup_entry(
     async_add_entities(
         [
             MelittaBrewButton(coordinator),
+            MelittaBrewProfileButton(coordinator),
             MelittaCancelButton(coordinator),
             MelittaSyncClockButton(coordinator),
         ]
@@ -51,6 +52,31 @@ class MelittaBrewButton(MelittaEntity, ButtonEntity):
         """Start the selected drink."""
         try:
             await self.coordinator.async_brew()
+        except MachineError as err:
+            raise HomeAssistantError(f"Could not start brewing: {err}") from err
+
+
+class MelittaBrewProfileButton(MelittaEntity, ButtonEntity):
+    """Brew the selected direct key from the selected profile."""
+
+    _attr_translation_key = "brew_profile"
+
+    def __init__(self, coordinator: MelittaCoordinator) -> None:
+        """Register the button."""
+        super().__init__(coordinator, "brew_profile")
+
+    @property
+    def available(self) -> bool:
+        """Offered while the machine is idle and the profiles are known."""
+        if not super().available or not self.coordinator.data.profile_names:
+            return False
+        status = self.coordinator.data.status
+        return status is not None and status.process in BREW_READY_PROCESSES
+
+    async def async_press(self) -> None:
+        """Start the selected profile drink."""
+        try:
+            await self.coordinator.async_brew_profile()
         except MachineError as err:
             raise HomeAssistantError(f"Could not start brewing: {err}") from err
 
