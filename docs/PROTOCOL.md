@@ -20,12 +20,31 @@ description of observed behaviour rather than a vendor specification.
 | Advertised name | article number, e.g. `860400E250429374203-` |
 
 Sources disagree about the write characteristic: protocol notes name `AD01`,
-while implementations that run against real hardware use `AD03`. The most
-likely explanation is that it differs between firmware revisions. This
-integration does not choose statically — `client._resolve_write_char()`
-enumerates the service and picks the first writable characteristic,
-preferring `AD03`, then `AD01`, then anything else writable that is not the
-notify characteristic.
+while implementations that run against real hardware use `AD03`. This
+integration does not choose statically — it enumerates the service and sends
+the handshake on each writable characteristic until one answers, because
+writing to the wrong one fails silently rather than erroring.
+
+The full characteristic table, read from firmware `02590029014`:
+
+| Characteristic | Properties |
+|---|---|
+| `AD01` | `write` |
+| `AD02` | `notify` |
+| `AD03` | `write` |
+| `AD06` | `notify`, `read` |
+
+Two things this table settles, both of which cost a day of debugging:
+
+- **Writes need a response.** Both write characteristics declare plain
+  `write`, not `write-without-response`. Requesting a write-without-response
+  on them is not a valid GATT operation: the frame is accepted locally and
+  never reaches the machine.
+- **There is a second notify characteristic**, `AD06`, that no protocol notes
+  mention. Subscribe to every notify characteristic of the service rather
+  than to `AD02` alone.
+
+On this firmware `AD03` is the one that answers.
 
 ### Bonding
 
@@ -37,6 +56,20 @@ with `Operation not permitted`.
 `pairing.py` registers a `DisplayYesNo` agent that auto-confirms. It is
 best-effort and only relevant for a local BlueZ adapter; ESPHome Bluetooth
 proxies bond on the proxy instead.
+
+**Bonding is mandatory, and its absence is silent.** An unbonded connection
+is accepted, the service and characteristics resolve, notifications
+subscribe — and then every write is ignored and the machine drops the link a
+second later. Observed on hardware:
+
+```
+(pair=False) → no handshake on any writable characteristic: no response to HU
+(pair=True)  → handshake answered on AD03, session established
+```
+
+So the bond has to be requested from the connector itself
+(`establish_connection(pair=True)`); a local pairing agent alone does not
+produce one, and on a Bluetooth proxy the agent plays no part at all.
 
 ## Framing
 
@@ -272,6 +305,18 @@ different source id. The one difference is the display name: there is no
 built-in name for a profile slot, so the category label is written to slot
 401 instead.
 
+Both formulas are confirmed against a Barista TS Smart. Reading profile 2's
+espresso key:
+
+```
+TX HC 0142                                   # 0x0142 = 322 = 302 + 2*10 + 0
+RX HC 0142 00 0101010300000800 0000...       # slot echoed, recipe_type 0
+```
+
+and the name registers returned the machine's own profile names. A profile
+that was never named reads back as the machine's placeholder — literally
+`--4--`, `--5--` and so on — not as an empty string.
+
 ## Numerical registers (`HR` / `HW`)
 
 | ID | Meaning |
@@ -301,17 +346,20 @@ Verified against this implementation's tests and consistent across the
 sources: framing, checksum, RC4, handshake, status layout, recipe layout,
 brew sequence, recipe/counter IDs.
 
-Lower confidence: the direct-key and profile-name register formulas. Unlike
-the rest of this document they are not corroborated by a captured exchange —
-they come from the constant tables of the reference implementation, and the
-block arithmetic is inferred from those tables rather than observed. The
-layout is self-consistent (name at the block start, seven drinks after it,
-stride of ten) and the slots parse as ordinary recipes, but a machine with a
-different profile count could disagree.
+Confirmed on a Barista TS Smart running firmware `02590029014`: the
+characteristic table above, that bonding is required, that writes take a
+response, the status and recipe layouts, the numerical registers listed
+above, and the direct-key and profile-name formulas.
 
-Not verified here (no hardware in the loop): the exact write characteristic
-per firmware, `HF`/`HL`/`HP`/`HQ` contents, and the value encodings noted
-above.
+One open question from that session: the `temperature` byte of a recipe
+component. This integration labels `0` as "cold", following the reference
+implementation — but a stock profile espresso reads back with `temperature =
+0`, and the machine cannot brew cold espresso. The built-in espresso recipe
+uses `2`. A low/medium/high scale fits the observed values better than
+cold/normal/high, and the machine's own menu offers three brew temperatures.
+
+Still unverified: `HF`/`HL`/`HP`/`HQ` contents, and the value encodings for
+registers 12, 14, 15, 16, 18, 22 and 91.
 
 ## Credits
 
