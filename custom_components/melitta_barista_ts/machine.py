@@ -58,6 +58,12 @@ WriteFunc = Callable[[bytes], Awaitable[None]]
 
 _ACK_KEY = "__ack__"
 
+#: Responses are keyed by command, not by register, so an answer that arrives
+#: just after its read timed out is picked up by the next read — which would
+#: file one register's value under the next one's name. Asking again is enough
+#: to get back in step, since the late frame has already been consumed.
+_STALE_ANSWER_RETRIES = 2
+
 
 class MachineError(Exception):
     """A command could not be completed."""
@@ -269,17 +275,38 @@ class MelittaMachine:
         so scanning a range at the full frame timeout would spend most of
         its time waiting for answers that are never coming.
         """
-        payload = await self._request(
-            CMD_READ_NUMERICAL, _pack_id(value_id), CMD_READ_NUMERICAL, timeout=timeout
-        )
-        return NumericalValue.from_payload(payload).value
+        for _ in range(_STALE_ANSWER_RETRIES):
+            payload = await self._request(
+                CMD_READ_NUMERICAL,
+                _pack_id(value_id),
+                CMD_READ_NUMERICAL,
+                timeout=timeout,
+            )
+            answer = NumericalValue.from_payload(payload)
+            if answer.value_id == value_id:
+                return answer.value
+            _LOGGER.debug(
+                "Register %s answered while %s was pending; asking again",
+                answer.value_id,
+                value_id,
+            )
+        raise CommandTimeout(f"no answer for register {value_id}")
 
     async def read_alphanumeric(self, value_id: int) -> str:
         """Read a text register (``HA``)."""
-        payload = await self._request(
-            CMD_READ_ALPHA, _pack_id(value_id), CMD_READ_ALPHA
-        )
-        return AlphanumericValue.from_payload(payload).value
+        for _ in range(_STALE_ANSWER_RETRIES):
+            payload = await self._request(
+                CMD_READ_ALPHA, _pack_id(value_id), CMD_READ_ALPHA
+            )
+            answer = AlphanumericValue.from_payload(payload)
+            if answer.value_id == value_id:
+                return answer.value
+            _LOGGER.debug(
+                "Text register %s answered while %s was pending; asking again",
+                answer.value_id,
+                value_id,
+            )
+        raise CommandTimeout(f"no answer for text register {value_id}")
 
     async def read_recipe(self, recipe_id: int) -> MachineRecipe:
         """Read a stored recipe (``HC``)."""

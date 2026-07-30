@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import struct
 
 import pytest
 
@@ -326,3 +327,42 @@ async def test_frames_are_chunked_to_the_mtu(machine, link):
 
     # The reassembled HJ frame is longer than one MTU-sized write.
     assert len(link.frames[2]) > 20
+
+
+async def test_a_late_answer_is_not_filed_under_the_next_register(machine, link):
+    """An answer that missed its own read must not become the next one's value.
+
+    Frames are keyed by command, not by register, so the response to a read
+    that already timed out lands in the read that follows it — and from there
+    every register reports its neighbour's value.
+    """
+    link.responder = _handshake_responder
+    await machine.handshake()
+
+    stale = _response("HR", struct.pack(">hi", 160, 4442))
+    fresh = _response("HR", struct.pack(">hi", 161, 25))
+    replies = iter([stale, fresh])
+
+    def _answer(command: str, frame: bytes) -> bytes | None:
+        return next(replies, None) if command == "HR" else None
+
+    link.responder = _answer
+
+    assert await machine.read_numerical(161) == 25
+    assert link.commands.count("HR") == 2
+
+
+async def test_a_register_that_only_ever_answers_wrong_is_reported(machine, link):
+    """Two wrong answers in a row is a machine we cannot read, not a value."""
+    link.responder = _handshake_responder
+    await machine.handshake()
+
+    def _always_stale(command: str, frame: bytes) -> bytes | None:
+        if command != "HR":
+            return None
+        return _response("HR", struct.pack(">hi", 160, 4442))
+
+    link.responder = _always_stale
+
+    with pytest.raises(CommandTimeout, match="register 161"):
+        await machine.read_numerical(161)
