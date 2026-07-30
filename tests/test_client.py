@@ -11,6 +11,7 @@ from bleak import BleakError
 from custom_components.melitta_barista_ts.client import (
     MelittaBleClient,
     MelittaConnectionError,
+    _scanner_source,
 )
 from custom_components.melitta_barista_ts.const import CONNECT_ATTEMPTS, SERVICE_UUID
 from custom_components.melitta_barista_ts.machine import HandshakeError
@@ -168,3 +169,19 @@ async def test_missing_vendor_service_is_reported() -> None:
         pytest.raises(MelittaConnectionError, match=SERVICE_UUID),
     ):
         await client.async_connect()
+
+
+@pytest.mark.parametrize(
+    ("details", "expected"),
+    [
+        ({"source": "44:1D:64:E4:5C:32"}, "44:1D:64:E4:5C:32"),
+        ({"path": "/org/bluez/hci0/dev_FC_E1_FF_68_54_2C"}, "hci0"),
+        ({}, "unknown adapter"),
+        (None, "unknown adapter"),
+    ],
+)
+def test_scanner_source_names_the_adapter(details, expected) -> None:
+    """Proxies report a MAC, BlueZ an object path; both should be readable."""
+    device = MagicMock()
+    device.details = details
+    assert _scanner_source(device) == expected

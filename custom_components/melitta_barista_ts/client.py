@@ -259,9 +259,17 @@ def _scanner_source(device: BLEDevice) -> str:
     """
     details = getattr(device, "details", None)
     if isinstance(details, dict):
+        # Remote scanners (ESPHome proxies) carry the proxy's MAC here.
         source = details.get("source")
         if source:
             return str(source)
+        # BlueZ instead exposes an object path like
+        # /org/bluez/hci0/dev_FC_E1_FF_68_54_2C — the adapter is in it.
+        path = details.get("path")
+        if isinstance(path, str):
+            parts = path.split("/")
+            if len(parts) > 3 and parts[3]:
+                return parts[3]
     return "unknown adapter"
 
 
