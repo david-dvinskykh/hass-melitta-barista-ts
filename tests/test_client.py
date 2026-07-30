@@ -12,23 +12,27 @@ from custom_components.melitta_barista_ts.client import (
     MelittaBleClient,
     MelittaConnectionError,
     _scanner_source,
+    _write_char_candidates,
 )
 from custom_components.melitta_barista_ts.const import CONNECT_ATTEMPTS, SERVICE_UUID
-from custom_components.melitta_barista_ts.machine import HandshakeError
+from custom_components.melitta_barista_ts.machine import CommandTimeout, HandshakeError
 
 ESTABLISH = "custom_components.melitta_barista_ts.client.establish_connection"
 AGENT = "custom_components.melitta_barista_ts.client.async_ensure_agent"
 WRITE_CHAR = "0000ad03-b35c-11e4-9813-0002a5d5c51b"
 
 
-def _fake_gatt_client() -> MagicMock:
-    """A BleakClient stand-in exposing the vendor service."""
+def _char(uuid: str, *properties: str) -> MagicMock:
     char = MagicMock()
-    char.uuid = WRITE_CHAR
-    char.properties = ["write-without-response"]
+    char.uuid = uuid
+    char.properties = list(properties) or ["write-without-response"]
+    return char
 
+
+def _fake_gatt_client(*chars: MagicMock) -> MagicMock:
+    """A BleakClient stand-in exposing the vendor service."""
     service = MagicMock()
-    service.characteristics = [char]
+    service.characteristics = list(chars) or [_char(WRITE_CHAR)]
 
     client = MagicMock()
     client.is_connected = True
@@ -185,3 +189,63 @@ def test_scanner_source_names_the_adapter(details, expected) -> None:
     device = MagicMock()
     device.details = details
     assert _scanner_source(device) == expected
+
+
+ALT_WRITE_CHAR = "0000ad01-b35c-11e4-9813-0002a5d5c51b"
+
+
+def test_write_char_candidates_are_ordered_by_preference() -> None:
+    """Known UUIDs come first, then anything else writable."""
+    other = "0000ad04-b35c-11e4-9813-0002a5d5c51b"
+    client = _fake_gatt_client(
+        _char(other),
+        _char(ALT_WRITE_CHAR),
+        _char(WRITE_CHAR),
+        _char("0000ad02-b35c-11e4-9813-0002a5d5c51b", "notify"),
+    )
+
+    assert _write_char_candidates(client) == [WRITE_CHAR, ALT_WRITE_CHAR, other]
+
+
+async def test_handshake_falls_back_to_the_other_write_characteristic() -> None:
+    """Writing to the wrong characteristic fails silently — try the next one.
+
+    The machine accepts the write, answers nothing and drops the link, so the
+    only way to tell the characteristics apart is to see which one replies.
+    """
+    gatt = _fake_gatt_client(_char(WRITE_CHAR), _char(ALT_WRITE_CHAR))
+    client = _make_client()
+    attempts = []
+
+    async def _handshake() -> None:
+        attempts.append(client._write_char)
+        if client._write_char == WRITE_CHAR:
+            raise CommandTimeout("no response to HU")
+        client.machine._key_prefix = b"\x11\x22"
+
+    with (
+        patch(ESTABLISH, AsyncMock(return_value=gatt)),
+        patch.object(client.machine, "handshake", AsyncMock(side_effect=_handshake)),
+    ):
+        await client.async_connect()
+
+    assert attempts == [WRITE_CHAR, ALT_WRITE_CHAR]
+    assert client._write_char == ALT_WRITE_CHAR
+    assert client.connected
+
+
+async def test_silent_characteristic_everywhere_is_reported() -> None:
+    """When nothing answers, say so and name what was tried."""
+    gatt = _fake_gatt_client(_char(WRITE_CHAR), _char(ALT_WRITE_CHAR))
+    client = _make_client()
+
+    with (
+        patch(ESTABLISH, AsyncMock(return_value=gatt)),
+        patch.object(
+            client.machine,
+            "handshake",
+            AsyncMock(side_effect=CommandTimeout("no response to HU")),
+        ),
+        pytest.raises(MelittaConnectionError, match="no handshake on any writable"),
+    ):
+        await client.async_connect()

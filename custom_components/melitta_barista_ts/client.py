@@ -180,18 +180,47 @@ class MelittaBleClient:
 
         self._client = client
         try:
-            self._write_char = _resolve_write_char(client)
+            candidates = _write_char_candidates(client)
             await client.start_notify(CHAR_NOTIFY_UUID, self._on_notify)
-            async with asyncio.timeout(self._connect_timeout):
-                await self.machine.handshake()
-        except MachineError:
+        except MelittaConnectionError:
             raise
-        except TimeoutError as err:
-            raise MelittaConnectionError(
-                f"handshake timed out after {self._connect_timeout:g}s"
-            ) from err
         except Exception as err:
             raise MelittaConnectionError(f"session setup failed: {err}") from err
+
+        await self._async_handshake_on_a_working_char(candidates)
+
+    async def _async_handshake_on_a_working_char(self, candidates: list[str]) -> None:
+        """Handshake, trying each writable characteristic until one answers.
+
+        Firmware revisions disagree about which characteristic of the vendor
+        service accepts frames, and writing to the wrong one fails silently:
+        the write is accepted, nothing comes back, and the machine drops the
+        link. Rather than guess from the UUID, send the handshake and let the
+        machine pick — the one that answers is the right one.
+        """
+        last_error: Exception | None = None
+
+        for uuid in candidates:
+            self._write_char = uuid
+            self.machine.reset()
+            try:
+                async with asyncio.timeout(self._connect_timeout):
+                    await self.machine.handshake()
+            except (MachineError, TimeoutError) as err:
+                _LOGGER.debug("No handshake on write characteristic %s: %s", uuid, err)
+                last_error = err
+                continue
+            except Exception as err:
+                raise MelittaConnectionError(f"session setup failed: {err}") from err
+
+            _LOGGER.debug("Handshake answered on write characteristic %s", uuid)
+            return
+
+        self._write_char = None
+        raise MelittaConnectionError(
+            f"no handshake on any writable characteristic "
+            f"({', '.join(candidates)}): {last_error}"
+        )
 
     async def async_disconnect(self) -> None:
         """Tear down the GATT link."""
@@ -273,30 +302,43 @@ def _scanner_source(device: BLEDevice) -> str:
     return "unknown adapter"
 
 
-def _resolve_write_char(client: BleakClient) -> str:
-    """Pick the characteristic used for outgoing frames.
+def _write_char_candidates(client: BleakClient) -> list[str]:
+    """List the characteristics that could carry outgoing frames, best first.
 
-    Firmware revisions disagree on whether that is ``AD01`` or ``AD03``, so
-    prefer the known candidates in order and otherwise fall back to any
-    writable characteristic inside the vendor service.
+    Firmware revisions disagree on whether that is ``AD01`` or ``AD03``, and
+    the UUID alone does not settle it — so return every writable
+    characteristic of the vendor service and let the handshake decide.
     """
     service = client.services.get_service(SERVICE_UUID)
     if service is None:
         raise MelittaConnectionError(f"service {SERVICE_UUID} not found on the device")
 
+    _LOGGER.debug(
+        "Vendor service characteristics: %s",
+        ", ".join(
+            f"{char.uuid} {sorted(char.properties)}" for char in service.characteristics
+        ),
+    )
+
     available = {char.uuid.lower(): char for char in service.characteristics}
+    ordered: list[str] = []
 
     for candidate in CHAR_WRITE_UUID_CANDIDATES:
         char = available.get(candidate.lower())
         if char is not None and _is_writable(char):
-            return char.uuid
+            ordered.append(char.uuid)
 
     for char in service.characteristics:
-        if _is_writable(char) and char.uuid.lower() != CHAR_NOTIFY_UUID.lower():
-            _LOGGER.debug("Falling back to write characteristic %s", char.uuid)
-            return char.uuid
+        if (
+            _is_writable(char)
+            and char.uuid.lower() != CHAR_NOTIFY_UUID.lower()
+            and char.uuid not in ordered
+        ):
+            ordered.append(char.uuid)
 
-    raise MelittaConnectionError("no writable characteristic in the vendor service")
+    if not ordered:
+        raise MelittaConnectionError("no writable characteristic in the vendor service")
+    return ordered
 
 
 def _is_writable(char) -> bool:
