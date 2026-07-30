@@ -1,8 +1,9 @@
 # Melitta Barista TS Smart for Home Assistant
 
-Custom integration that controls a **Melitta Caffeo Barista TS Smart** (and
-the single-hopper **Barista T Smart**) over Bluetooth Low Energy — the same
-link the Melitta Connect app uses. No cloud, no account, no vendor app.
+Custom integration that controls a **Melitta Barista TS Smart** (sold as
+CAFFEO Barista TS Smart before the 2019 rebrand) and the single-hopper
+**Melitta Barista T Smart** over Bluetooth Low Energy — the same link the
+Melitta Connect app uses. No cloud, no account, no vendor app.
 
 > Not affiliated with or endorsed by Melitta. The protocol is
 > reverse-engineered; see [`docs/PROTOCOL.md`](docs/PROTOCOL.md).
@@ -40,6 +41,17 @@ unavailable until it wakes up.
 
 Copy `custom_components/melitta_barista_ts` into your `config/custom_components/`
 directory and restart Home Assistant.
+
+### Integration icon
+
+Every entity carries its own icon, but the tile on the integrations page
+comes from Home Assistant's shared brands repository, which no custom
+integration can serve from its own folder — until the domain is listed
+there, the tile stays a puzzle piece. To change that, open a pull request
+against [home-assistant/brands](https://github.com/home-assistant/brands)
+adding `custom_integrations/melitta_barista_ts/icon.png` (256×256) and
+`icon@2x.png` (512×512), plus `logo.png` / `logo@2x.png` if you have the
+wordmark, using artwork from Melitta's own press material.
 
 ## Setup
 

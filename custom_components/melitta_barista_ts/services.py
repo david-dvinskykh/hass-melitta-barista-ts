@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 from datetime import time as dt_time
+from typing import Final
 
 import voluptuous as vol
 from homeassistant.const import ATTR_AREA_ID, ATTR_DEVICE_ID, ATTR_ENTITY_ID
@@ -23,7 +24,9 @@ from homeassistant.util import dt as dt_util
 from .const import (
     ATTR_BEAN_HOPPER,
     ATTR_DRINK,
+    ATTR_FIRST_ID,
     ATTR_INTENSITY,
+    ATTR_LAST_ID,
     ATTR_PORTION_ML,
     ATTR_PROFILE,
     ATTR_SETTING_ID,
@@ -38,6 +41,7 @@ from .const import (
     SERVICE_BREW,
     SERVICE_CANCEL,
     SERVICE_READ_SETTING,
+    SERVICE_SCAN_SETTINGS,
     SERVICE_SET_CLOCK,
     SERVICE_WRITE_SETTING,
     SLUG_TO_BLEND,
@@ -93,6 +97,21 @@ READ_SETTING_SCHEMA = _DEVICE_SCHEMA.extend(
         vol.Required(ATTR_SETTING_ID): vol.All(
             vol.Coerce(int), vol.Range(min=0, max=32767)
         )
+    }
+)
+
+#: A scan holds the link for one round trip per register, so keep the span
+#: short enough that a poll or a brew is not left queued behind it.
+MAX_SCAN_SPAN: Final = 128
+
+SCAN_SETTINGS_SCHEMA = _DEVICE_SCHEMA.extend(
+    {
+        vol.Required(ATTR_FIRST_ID): vol.All(
+            vol.Coerce(int), vol.Range(min=0, max=32767)
+        ),
+        vol.Required(ATTR_LAST_ID): vol.All(
+            vol.Coerce(int), vol.Range(min=0, max=32767)
+        ),
     }
 )
 
@@ -253,6 +272,32 @@ def async_setup_services(hass: HomeAssistant) -> None:
             ) from err
         return {"setting_id": setting_id, "value": value}
 
+    async def _async_scan_settings(call: ServiceCall) -> ServiceResponse:
+        first: int = call.data[ATTR_FIRST_ID]
+        last: int = call.data[ATTR_LAST_ID]
+        if last < first:
+            raise ServiceValidationError("last_id must not be below first_id")
+        if last - first + 1 > MAX_SCAN_SPAN:
+            raise ServiceValidationError(
+                f"a scan covers at most {MAX_SCAN_SPAN} registers at a time"
+            )
+
+        coordinator = _one_coordinator(hass, call)
+        values: dict[str, int] = {}
+        unreadable: list[int] = []
+        for setting_id in range(first, last + 1):
+            try:
+                values[str(setting_id)] = await coordinator.async_read_setting(
+                    setting_id
+                )
+            except MachineError as err:
+                # An unassigned register is answered with a NACK, which is the
+                # normal outcome for most of a scan — collect it and move on.
+                _LOGGER.debug("Register %s not readable: %s", setting_id, err)
+                unreadable.append(setting_id)
+
+        return {"values": values, "unreadable": unreadable}
+
     hass.services.async_register(DOMAIN, SERVICE_BREW, _async_brew, BREW_SCHEMA)
     hass.services.async_register(DOMAIN, SERVICE_CANCEL, _async_cancel, CANCEL_SCHEMA)
     hass.services.async_register(
@@ -266,5 +311,12 @@ def async_setup_services(hass: HomeAssistant) -> None:
         SERVICE_READ_SETTING,
         _async_read_setting,
         READ_SETTING_SCHEMA,
+        supports_response=SupportsResponse.ONLY,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_SCAN_SETTINGS,
+        _async_scan_settings,
+        SCAN_SETTINGS_SCHEMA,
         supports_response=SupportsResponse.ONLY,
     )

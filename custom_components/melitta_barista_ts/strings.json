@@ -377,6 +377,20 @@
           "description": "Register ID to read."
         }
       }
+    },
+    "scan_settings": {
+      "name": "Scan registers",
+      "description": "Read a range of numerical registers and return the ones the machine answers. Meant for discovering registers that are not documented yet; each register costs one round trip, so keep the range short.",
+      "fields": {
+        "first_id": {
+          "name": "First register",
+          "description": "Lowest register ID to read."
+        },
+        "last_id": {
+          "name": "Last register",
+          "description": "Highest register ID to read, inclusive."
+        }
+      }
     }
   },
   "exceptions": {

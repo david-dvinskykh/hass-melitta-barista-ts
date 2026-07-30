@@ -83,6 +83,16 @@ def test_service_selector_options_match_the_code() -> None:
     assert options == set(RECIPE_SLUGS.values())
 
 
+def test_every_entity_and_service_has_an_icon() -> None:
+    """Nothing falls back to the bare domain icon in the dashboard."""
+    icons = json.loads((COMPONENT / "icons.json").read_text(encoding="utf-8"))
+
+    for platform, keys in STRINGS["entity"].items():
+        assert set(keys) == set(icons["entity"].get(platform, {})), platform
+
+    assert set(STRINGS["services"]) == set(icons["services"])
+
+
 def test_every_entity_translation_key_is_declared() -> None:
     """No platform references a translation key strings.json does not define."""
     declared_sensors = set(STRINGS["entity"]["sensor"])

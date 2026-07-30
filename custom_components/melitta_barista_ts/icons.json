@@ -1,0 +1,180 @@
+{
+  "entity": {
+    "binary_sensor": {
+      "brewing": {
+        "default": "mdi:coffee-maker",
+        "state": {
+          "on": "mdi:coffee"
+        }
+      },
+      "maintenance": {
+        "default": "mdi:wrench",
+        "state": {
+          "on": "mdi:wrench-clock"
+        }
+      },
+      "water_tank_empty": {
+        "default": "mdi:water",
+        "state": {
+          "on": "mdi:water-alert"
+        }
+      },
+      "trays_full": {
+        "default": "mdi:tray",
+        "state": {
+          "on": "mdi:tray-full"
+        }
+      },
+      "trays_missing": {
+        "default": "mdi:tray",
+        "state": {
+          "on": "mdi:tray-remove"
+        }
+      },
+      "brew_unit_removed": {
+        "default": "mdi:coffee-maker",
+        "state": {
+          "on": "mdi:coffee-maker-outline"
+        }
+      },
+      "powder_lid_open": {
+        "default": "mdi:coffee-outline",
+        "state": {
+          "on": "mdi:alert-circle-outline"
+        }
+      },
+      "beans_empty_hopper_1": {
+        "default": "mdi:seed",
+        "state": {
+          "on": "mdi:seed-outline"
+        }
+      },
+      "beans_empty_hopper_2": {
+        "default": "mdi:seed",
+        "state": {
+          "on": "mdi:seed-outline"
+        }
+      },
+      "easy_clean_required": {
+        "default": "mdi:cup-water",
+        "state": {
+          "on": "mdi:water-alert"
+        }
+      }
+    },
+    "sensor": {
+      "status": {
+        "default": "mdi:coffee-maker"
+      },
+      "sub_status": {
+        "default": "mdi:information-outline"
+      },
+      "attention": {
+        "default": "mdi:alert-circle-outline"
+      },
+      "progress": {
+        "default": "mdi:progress-clock"
+      },
+      "clock": {
+        "default": "mdi:clock-outline"
+      },
+      "firmware": {
+        "default": "mdi:chip"
+      },
+      "total_cups": {
+        "default": "mdi:counter"
+      },
+      "drink_cups": {
+        "default": "mdi:coffee"
+      }
+    },
+    "button": {
+      "brew": {
+        "default": "mdi:coffee"
+      },
+      "brew_profile": {
+        "default": "mdi:account"
+      },
+      "cancel": {
+        "default": "mdi:stop"
+      },
+      "sync_clock": {
+        "default": "mdi:clock-check-outline"
+      },
+      "key_espresso": {
+        "default": "mdi:coffee"
+      },
+      "key_cafe_creme": {
+        "default": "mdi:coffee-outline"
+      },
+      "key_cappuccino": {
+        "default": "mdi:coffee-to-go"
+      },
+      "key_latte_macchiato": {
+        "default": "mdi:glass-mug-variant"
+      },
+      "key_milk_froth": {
+        "default": "mdi:cup"
+      },
+      "key_milk": {
+        "default": "mdi:cup-outline"
+      },
+      "key_hot_water": {
+        "default": "mdi:kettle"
+      }
+    },
+    "select": {
+      "drink": {
+        "default": "mdi:format-list-bulleted"
+      },
+      "profile_drink": {
+        "default": "mdi:format-list-bulleted"
+      },
+      "intensity": {
+        "default": "mdi:gauge"
+      },
+      "brew_temperature": {
+        "default": "mdi:thermometer"
+      },
+      "bean_hopper": {
+        "default": "mdi:seed"
+      },
+      "profile": {
+        "default": "mdi:account"
+      }
+    },
+    "number": {
+      "portion": {
+        "default": "mdi:cup"
+      },
+      "auto_off_after": {
+        "default": "mdi:timer-outline"
+      }
+    },
+    "switch": {
+      "two_cups": {
+        "default": "mdi:numeric-2-box-outline"
+      }
+    }
+  },
+  "services": {
+    "brew": {
+      "service": "mdi:coffee"
+    },
+    "cancel": {
+      "service": "mdi:stop"
+    },
+    "set_clock": {
+      "service": "mdi:clock-outline"
+    },
+    "read_setting": {
+      "service": "mdi:cog"
+    },
+    "write_setting": {
+      "service": "mdi:cog"
+    },
+    "scan_settings": {
+      "service": "mdi:magnify-scan"
+    }
+  }
+}

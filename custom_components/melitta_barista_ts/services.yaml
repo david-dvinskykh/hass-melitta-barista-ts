@@ -138,3 +138,25 @@ read_setting:
           min: 0
           max: 32767
           mode: box
+
+scan_settings:
+  target:
+    device:
+      integration: melitta_barista_ts
+  fields:
+    first_id:
+      required: true
+      example: 150
+      selector:
+        number:
+          min: 0
+          max: 32767
+          mode: box
+    last_id:
+      required: true
+      example: 200
+      selector:
+        number:
+          min: 0
+          max: 32767
+          mode: box
