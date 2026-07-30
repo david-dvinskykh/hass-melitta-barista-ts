@@ -38,7 +38,7 @@
         }
       },
       "powder_lid_open": {
-        "default": "mdi:coffee-outline",
+        "default": "mdi:spoon-sugar",
         "state": {
           "on": "mdi:alert-circle-outline"
         }
@@ -46,17 +46,17 @@
       "beans_empty_hopper_1": {
         "default": "mdi:seed",
         "state": {
-          "on": "mdi:seed-outline"
+          "on": "mdi:seed-off"
         }
       },
       "beans_empty_hopper_2": {
         "default": "mdi:seed",
         "state": {
-          "on": "mdi:seed-outline"
+          "on": "mdi:seed-off"
         }
       },
       "easy_clean_required": {
-        "default": "mdi:cup-water",
+        "default": "mdi:water-sync",
         "state": {
           "on": "mdi:water-alert"
         }
@@ -88,10 +88,10 @@
         "default": "mdi:coffee"
       },
       "milk_system_cleanings": {
-        "default": "mdi:cup-water"
+        "default": "mdi:spray-bottle"
       },
       "coffee_system_cleanings": {
-        "default": "mdi:coffee-maker"
+        "default": "mdi:coffee-maker-check"
       },
       "descalings": {
         "default": "mdi:water-percent"
@@ -102,10 +102,10 @@
     },
     "button": {
       "brew": {
-        "default": "mdi:coffee"
+        "default": "mdi:coffee-maker"
       },
       "brew_profile": {
-        "default": "mdi:account"
+        "default": "mdi:account-star"
       },
       "cancel": {
         "default": "mdi:stop"
@@ -120,19 +120,19 @@
         "default": "mdi:coffee-outline"
       },
       "key_cappuccino": {
-        "default": "mdi:coffee-to-go"
+        "default": "mdi:cup"
       },
       "key_latte_macchiato": {
         "default": "mdi:glass-mug-variant"
       },
       "key_milk_froth": {
-        "default": "mdi:cup"
-      },
-      "key_milk": {
         "default": "mdi:cup-outline"
       },
+      "key_milk": {
+        "default": "mdi:cow"
+      },
       "key_hot_water": {
-        "default": "mdi:kettle"
+        "default": "mdi:kettle-steam"
       }
     },
     "select": {
@@ -140,7 +140,7 @@
         "default": "mdi:format-list-bulleted"
       },
       "profile_drink": {
-        "default": "mdi:format-list-bulleted"
+        "default": "mdi:format-list-checks"
       },
       "intensity": {
         "default": "mdi:gauge"
@@ -157,7 +157,7 @@
     },
     "number": {
       "portion": {
-        "default": "mdi:cup"
+        "default": "mdi:beaker-outline"
       },
       "auto_off_after": {
         "default": "mdi:timer-outline"
@@ -180,10 +180,10 @@
       "service": "mdi:clock-outline"
     },
     "read_setting": {
-      "service": "mdi:cog"
+      "service": "mdi:database-search"
     },
     "write_setting": {
-      "service": "mdi:cog"
+      "service": "mdi:database-edit"
     },
     "scan_settings": {
       "service": "mdi:magnify-scan"

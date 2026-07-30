@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 import pytest
@@ -91,6 +92,19 @@ def test_every_entity_and_service_has_an_icon() -> None:
         assert set(keys) == set(icons["entity"].get(platform, {})), platform
 
     assert set(STRINGS["services"]) == set(icons["services"])
+
+    # Names themselves were checked against the Material Design Icons set
+    # (7.4.47, the one Home Assistant ships); this only keeps the spelling
+    # from drifting into something the frontend would silently drop.
+    for name in _icon_names(icons):
+        assert re.fullmatch(r"mdi:[a-z0-9]+(-[a-z0-9]+)*", name), name
+
+
+def _icon_names(obj: object) -> set[str]:
+    """Every icon string anywhere in icons.json."""
+    if isinstance(obj, dict):
+        return set().union(*(_icon_names(value) for value in obj.values()))
+    return {obj} if isinstance(obj, str) else set()
 
 
 def test_every_entity_translation_key_is_declared() -> None:
