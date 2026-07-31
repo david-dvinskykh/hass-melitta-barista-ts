@@ -53,12 +53,14 @@ class MelittaBleClient:
         frame_timeout: float = DEFAULT_FRAME_TIMEOUT,
         connect_timeout: float = DEFAULT_CONNECT_TIMEOUT,
         use_pairing_agent: bool = True,
+        on_pairing_refused: Callable[[str], None] | None = None,
     ) -> None:
         """Store connection parameters; no I/O happens here."""
         self._device_provider = device_provider
         self._name = name
         self._connect_timeout = connect_timeout
         self._use_pairing_agent = use_pairing_agent
+        self._on_pairing_refused = on_pairing_refused
         self._client: BleakClient | None = None
         self._write_char = None
         self._notify_chars: list[str] = []
@@ -159,8 +161,15 @@ class MelittaBleClient:
             # adapter and let the next connect try another one, rather than
             # asking the same one again every poll for ever.
             self._rotation += 1
-            if refused and self.last_good_source == scanner_source(device):
-                self.last_good_source = None
+            if refused:
+                # The client is rebuilt on every config entry retry, so this
+                # has to be reported to something longer-lived — otherwise
+                # each retry starts from the same first candidate and the
+                # rotation never leaves the adapter that cannot bond.
+                if self.last_good_source == scanner_source(device):
+                    self.last_good_source = None
+                if self._on_pairing_refused is not None:
+                    self._on_pairing_refused(scanner_source(device))
 
             message = f"could not establish a session with {self._name}: {last_error}"
             if refused and self._candidates > 1:

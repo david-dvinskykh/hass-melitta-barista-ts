@@ -14,6 +14,11 @@ from typing import Final
 DOMAIN: Final = "melitta_barista_ts"
 MANUFACTURER: Final = "Melitta"
 
+#: hass.data key holding, per machine address, the adapters whose bond the
+#: machine has refused. Outlives the config entry retries, which build a
+#: fresh client each time.
+REFUSED_SOURCES: Final = f"{DOMAIN}_refused_sources"
+
 # --------------------------------------------------------------------------
 # BLE GATT
 # --------------------------------------------------------------------------

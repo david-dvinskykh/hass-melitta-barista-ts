@@ -507,3 +507,47 @@ async def test_a_lone_refused_adapter_says_so() -> None:
         pytest.raises(MelittaConnectionError, match="only adapter"),
     ):
         await client.async_connect()
+
+
+async def test_a_refused_adapter_is_reported_to_the_owner_of_the_list() -> None:
+    """The client is rebuilt on every retry, so it cannot remember this itself.
+
+    Without telling something longer-lived, every retry starts again at the
+    same first candidate and the rotation never leaves the adapter that
+    cannot bond.
+    """
+    refused: set[str] = set()
+    client = MelittaBleClient(
+        lambda: [_device("proxy-a")],
+        name="Machine",
+        on_pairing_refused=refused.add,
+    )
+
+    with (
+        patch(
+            ESTABLISH,
+            AsyncMock(side_effect=BleakError("Pairing failed due to error: 82")),
+        ),
+        pytest.raises(MelittaConnectionError),
+    ):
+        await client.async_connect()
+
+    assert refused == {"proxy-a"}
+
+
+async def test_an_adapter_that_merely_timed_out_is_not_written_off() -> None:
+    """Out of range says nothing about the bond it holds."""
+    refused: set[str] = set()
+    client = MelittaBleClient(
+        lambda: [_device("proxy-a")],
+        name="Machine",
+        on_pairing_refused=refused.add,
+    )
+
+    with (
+        patch(ESTABLISH, AsyncMock(side_effect=BleakError("device not found"))),
+        pytest.raises(MelittaConnectionError),
+    ):
+        await client.async_connect()
+
+    assert refused == set()

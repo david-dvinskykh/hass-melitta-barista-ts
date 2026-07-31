@@ -10,7 +10,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 
 from .brand import async_serve_brand, async_stop_serving_brand
-from .client import MelittaBleClient
+from .client import MelittaBleClient, scanner_source
 from .const import (
     CONF_BRAND_ICON,
     CONF_CONNECT_TIMEOUT,
@@ -23,6 +23,7 @@ from .const import (
     DEFAULT_PAIRING_AGENT,
     DEFAULT_POLL_INTERVAL,
     DOMAIN,
+    REFUSED_SOURCES,
 )
 from .coordinator import MelittaConfigEntry, MelittaCoordinator
 from .services import async_setup_services
@@ -51,16 +52,21 @@ async def async_setup_entry(hass: HomeAssistant, entry: MelittaConfigEntry) -> b
         await async_serve_brand(hass)
         entry.async_on_unload(lambda: async_stop_serving_brand(hass))
 
-    client: MelittaBleClient | None = None
+    # Adapters the machine has refused to bond with, remembered across the
+    # config entry retries that build a fresh client every time.
+    refused: set[str] = hass.data.setdefault(REFUSED_SOURCES, {}).setdefault(
+        address, set()
+    )
 
     def _device_provider():
         """The machine as every adapter that can hear it sees it.
 
         Home Assistant would hand out whichever adapter heard it loudest, but
-        bonds are held per adapter: the loudest one may be holding no key the
-        machine trusts, and then the link comes up and the machine ignores
-        everything sent over it. Handing the client the whole list lets it
-        stay on the adapter that works and move on from one that does not.
+        bonds are held per adapter: the loudest one may be holding a key the
+        machine no longer accepts, and then pairing is refused for good. So
+        adapters that have been refused are dropped from the list — until
+        every one of them has, at which point the whole list comes back and
+        the cycle starts over rather than leaving the machine unreachable.
         """
         devices = [
             scanner_device.ble_device
@@ -68,13 +74,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: MelittaConfigEntry) -> b
                 hass, address, connectable=True
             )
         ]
-        if devices:
-            return devices
+        if not devices:
+            single = bluetooth.async_ble_device_from_address(
+                hass, address, connectable=True
+            )
+            devices = [single] if single is not None else []
 
-        single = bluetooth.async_ble_device_from_address(
-            hass, address, connectable=True
-        )
-        return [single] if single is not None else []
+        usable = [device for device in devices if scanner_source(device) not in refused]
+        if not usable and devices:
+            _LOGGER.debug("Every adapter has been refused; starting over")
+            refused.clear()
+            return devices
+        return usable
 
     if not _device_provider():
         raise ConfigEntryNotReady(
@@ -88,6 +99,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: MelittaConfigEntry) -> b
         frame_timeout=options.get(CONF_FRAME_TIMEOUT, DEFAULT_FRAME_TIMEOUT),
         connect_timeout=options.get(CONF_CONNECT_TIMEOUT, DEFAULT_CONNECT_TIMEOUT),
         use_pairing_agent=options.get(CONF_PAIRING_AGENT, DEFAULT_PAIRING_AGENT),
+        on_pairing_refused=refused.add,
     )
 
     coordinator = MelittaCoordinator(
