@@ -68,6 +68,7 @@ class MelittaBleClient:
         #: held per adapter, so the one that worked is worth going back to.
         self.last_good_source: str | None = None
         self._rotation = 0
+        self._candidates = 0
         self.machine = MelittaMachine(self._write, frame_timeout=frame_timeout)
 
     # -- state -----------------------------------------------------------
@@ -162,12 +163,22 @@ class MelittaBleClient:
                 self.last_good_source = None
 
             message = f"could not establish a session with {self._name}: {last_error}"
-            if refused:
+            if refused and self._candidates > 1:
                 message += (
                     f". {scanner_source(device)} holds a bond the machine no "
-                    "longer accepts; the next attempt will use a different "
-                    "adapter, and melitta_barista_ts.repair_connection drops "
-                    "the bond if none of them work"
+                    "longer accepts; the next attempt will use one of the "
+                    f"other {self._candidates - 1} adapter(s) that can reach it"
+                )
+            elif refused:
+                # Nothing to fall back to, so this is as far as the
+                # integration gets on its own.
+                message += (
+                    f". {scanner_source(device)} is the only adapter that can "
+                    "reach the machine, and the bond it holds is one the "
+                    "machine no longer accepts. Put the machine into pairing "
+                    "mode from its own menu and confirm the code on its "
+                    "display; melitta_barista_ts.repair_connection drops the "
+                    "bond first if pairing is still refused"
                 )
             elif silent_machine:
                 # The link came up and the machine ignored the handshake, so
@@ -193,7 +204,9 @@ class MelittaBleClient:
         """
         candidates = self._device_provider()
         if not isinstance(candidates, (list, tuple)):
+            self._candidates = 1
             return candidates  # a provider that only knows one device
+        self._candidates = len(candidates)
         if not candidates:
             return None
 

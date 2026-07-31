@@ -441,7 +441,7 @@ async def test_a_refused_bond_is_not_thrown_away_behind_your_back() -> None:
             ESTABLISH,
             AsyncMock(side_effect=BleakError("Pairing failed due to error: 82")),
         ),
-        pytest.raises(MelittaConnectionError, match="different adapter"),
+        pytest.raises(MelittaConnectionError, match="pairing mode"),
     ):
         await client.async_connect()
 
@@ -493,3 +493,17 @@ async def test_clearing_the_bond_is_something_you_ask_for() -> None:
 
     gatt.unpair.assert_awaited_once()
     assert client.last_good_source is None
+
+
+async def test_a_lone_refused_adapter_says_so() -> None:
+    """Promising to try another adapter is a lie when there is only one."""
+    client = MelittaBleClient(lambda: [_device("hci0")], name="Machine")
+
+    with (
+        patch(
+            ESTABLISH,
+            AsyncMock(side_effect=BleakError("Pairing failed due to error: 102")),
+        ),
+        pytest.raises(MelittaConnectionError, match="only adapter"),
+    ):
+        await client.async_connect()
