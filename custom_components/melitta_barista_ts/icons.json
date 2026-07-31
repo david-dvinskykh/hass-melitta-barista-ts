@@ -187,6 +187,9 @@
     },
     "scan_settings": {
       "service": "mdi:magnify-scan"
+    },
+    "repair_connection": {
+      "service": "mdi:bluetooth-connect"
     }
   }
 }

@@ -246,13 +246,20 @@ address once bonded.
 confirmation. Leave the pairing-agent option on, or pair manually with
 `bluetoothctl` as shown above.
 
-**"Pairing failed due to error: 102", or the log shows the bond being
-cleared.** The adapter or proxy still holds a bond the machine has forgotten
-— after a factory reset, or after it bonded with a phone since. The
-integration notices a refused pairing, drops its own half of the bond and
-pairs again, which takes one extra connect attempt. If pairing keeps being
-refused, the other half is stale too: forget the machine in its Bluetooth
-menu, or clear the bond table on the ESPHome proxy, then reconnect.
+**"Pairing failed due to error: 82" or "102".** That adapter holds a bond
+the machine no longer accepts. Bonds are per adapter, so the integration
+gives up on that one and tries another on the next attempt — with several
+proxies in range it usually finds one that still works, or one with no bond
+at all, which can pair afresh.
+
+If every adapter is refused, the bond has to go. `melitta_barista_ts.repair_connection`
+drops it and reconnects; afterwards the machine has to be put into pairing
+mode from its own menu, with the code confirmed on its display, because
+Numeric Comparison cannot be completed from Home Assistant alone. On an
+ESPHome proxy the unpair often fails outright ("Insufficient authorization")
+— older firmware keeps the bond in NVS with no way to remove it over the
+air, and the fix is an `esp_ble_remove_bond_device` action on the proxy
+itself.
 
 **Connects, then every frame reports a checksum mismatch.** The handshake
 produced a bad session key. The integration rejects mismatched handshakes and

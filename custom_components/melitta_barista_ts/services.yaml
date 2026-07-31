@@ -160,3 +160,8 @@ scan_settings:
           min: 0
           max: 32767
           mode: box
+
+repair_connection:
+  target:
+    device:
+      integration: melitta_barista_ts

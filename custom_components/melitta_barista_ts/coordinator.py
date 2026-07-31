@@ -510,6 +510,16 @@ class MelittaCoordinator(DataUpdateCoordinator[MelittaData]):
         self.async_invalidate_settings()
         await self.async_request_refresh()
 
+    async def async_repair_connection(self) -> None:
+        """Drop the bond and reconnect from scratch.
+
+        The last resort for an adapter holding a key the machine has
+        forgotten. It costs a trip to the machine: bonding again needs
+        pairing mode enabled there and the code confirmed on its display.
+        """
+        await self.client.async_clear_bond()
+        await self.async_request_refresh()
+
     async def async_read_setting(
         self, setting_id: int, *, timeout: float | None = None
     ) -> int:

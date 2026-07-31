@@ -41,6 +41,7 @@ from .const import (
     SERVICE_BREW,
     SERVICE_CANCEL,
     SERVICE_READ_SETTING,
+    SERVICE_REPAIR_CONNECTION,
     SERVICE_SCAN_SETTINGS,
     SERVICE_SET_CLOCK,
     SERVICE_WRITE_SETTING,
@@ -303,6 +304,13 @@ def async_setup_services(hass: HomeAssistant) -> None:
 
         return {"values": values, "unreadable": unreadable}
 
+    async def _async_repair_connection(call: ServiceCall) -> None:
+        for coordinator in _coordinators(hass, call):
+            try:
+                await coordinator.async_repair_connection()
+            except MachineError as err:
+                raise HomeAssistantError(f"Could not clear the bond: {err}") from err
+
     hass.services.async_register(DOMAIN, SERVICE_BREW, _async_brew, BREW_SCHEMA)
     hass.services.async_register(DOMAIN, SERVICE_CANCEL, _async_cancel, CANCEL_SCHEMA)
     hass.services.async_register(
@@ -317,6 +325,9 @@ def async_setup_services(hass: HomeAssistant) -> None:
         _async_read_setting,
         READ_SETTING_SCHEMA,
         supports_response=SupportsResponse.ONLY,
+    )
+    hass.services.async_register(
+        DOMAIN, SERVICE_REPAIR_CONNECTION, _async_repair_connection, CANCEL_SCHEMA
     )
     hass.services.async_register(
         DOMAIN,

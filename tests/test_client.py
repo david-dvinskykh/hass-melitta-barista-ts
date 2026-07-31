@@ -169,57 +169,6 @@ async def test_reconnect_starts_from_the_unbonded_attempt_again() -> None:
     assert attempts == [False, False]
 
 
-async def test_refused_pairing_drops_the_bond_and_pairs_again() -> None:
-    """A bond the machine has forgotten is cleared, not retried forever."""
-    gatt = _fake_gatt_client()
-    gatt.unpair = AsyncMock()
-    attempts: list[bool] = []
-
-    async def _establish(*args, pair: bool = False, **kwargs):
-        attempts.append(pair)
-        # Both the plain and the pairing attempt fail; the unpair connect and
-        # the attempt after it succeed.
-        if len(attempts) == 1:
-            raise BleakError("connection dropped")
-        if len(attempts) == 2:
-            raise BleakError("Pairing failed due to error: 102")
-        return gatt
-
-    client = _make_client()
-    with (
-        patch(ESTABLISH, AsyncMock(side_effect=_establish)),
-        patch.object(client.machine, "handshake", _ready_handshake(client)),
-    ):
-        await client.async_connect()
-
-    # pair=False, pair=True, the unpair connect, then pair=True once more.
-    assert attempts == [False, True, False, True]
-    gatt.unpair.assert_awaited_once()
-    gatt.disconnect.assert_awaited()
-    assert client.connected
-
-
-async def test_the_bond_is_dropped_at_most_once_per_connect() -> None:
-    """Clearing it twice would only cost another connect window."""
-    gatt = _fake_gatt_client()
-    gatt.unpair = AsyncMock()
-    established = AsyncMock(side_effect=BleakError("Pairing failed due to error: 102"))
-
-    client = _make_client()
-    with (
-        patch(ESTABLISH, established),
-        pytest.raises(MelittaConnectionError, match="Pairing failed"),
-    ):
-        await client.async_connect()
-
-    assert [call.kwargs["pair"] for call in established.await_args_list] == [
-        False,
-        True,
-        False,  # the connect made to unpair, which fails too
-        True,
-    ]
-
-
 async def test_an_unreachable_machine_keeps_its_bond() -> None:
     """A timeout says nothing about the bond — do not throw it away."""
     gatt = _fake_gatt_client()
@@ -233,29 +182,6 @@ async def test_an_unreachable_machine_keeps_its_bond() -> None:
         await client.async_connect()
 
     gatt.unpair.assert_not_awaited()
-
-
-async def test_a_proxy_that_cannot_unpair_is_reported_not_raised() -> None:
-    """Older proxy firmware has no unpair; the attempt after it still runs."""
-    gatt = _fake_gatt_client()
-    gatt.unpair = AsyncMock(side_effect=BleakError("not supported"))
-    calls: list[bool] = []
-
-    async def _establish(*args, pair: bool = False, **kwargs):
-        calls.append(pair)
-        if len(calls) <= 2:
-            raise BleakError("Pairing failed due to error: 102")
-        return gatt
-
-    client = _make_client()
-    with (
-        patch(ESTABLISH, AsyncMock(side_effect=_establish)),
-        patch.object(client.machine, "handshake", _ready_handshake(client)),
-    ):
-        await client.async_connect()
-
-    assert calls == [False, True, False, True]
-    assert client.connected
 
 
 async def test_connect_reports_the_last_failure() -> None:
@@ -490,3 +416,80 @@ async def test_the_working_adapter_is_remembered() -> None:
         await client.async_connect()
 
     assert client.last_good_source == "44:1D:64:E4:81:3A"
+
+
+def _device(source: str) -> MagicMock:
+    device = MagicMock()
+    device.address = "AA:BB:CC:DD:EE:FF"
+    device.details = {"source": source}
+    return device
+
+
+async def test_a_refused_bond_is_not_thrown_away_behind_your_back() -> None:
+    """Dropping it needs someone at the machine to bond again — never silently.
+
+    The machine only bonds with Numeric Comparison, confirmed on its own
+    display, so clearing the bond on a failure would strand the integration
+    until somebody walked over to it.
+    """
+    gatt = _fake_gatt_client()
+    gatt.unpair = AsyncMock()
+    client = _make_client()
+
+    with (
+        patch(
+            ESTABLISH,
+            AsyncMock(side_effect=BleakError("Pairing failed due to error: 82")),
+        ),
+        pytest.raises(MelittaConnectionError, match="different adapter"),
+    ):
+        await client.async_connect()
+
+    gatt.unpair.assert_not_awaited()
+
+
+async def test_the_next_attempt_moves_to_another_adapter() -> None:
+    """An adapter whose bond the machine rejects refuses it every time.
+
+    Asking the same one again on every poll would never recover, however
+    many other adapters can hear the machine.
+    """
+    proxies = [_device("proxy-a"), _device("proxy-b"), _device("proxy-c")]
+    client = MelittaBleClient(lambda: proxies, name="Machine")
+    tried: list[str] = []
+
+    async def _establish(_cls, device, *args, **kwargs):
+        tried.append(device.details["source"])
+        raise BleakError("Pairing failed due to error: 82")
+
+    with patch(ESTABLISH, AsyncMock(side_effect=_establish)):
+        for _ in range(3):
+            with pytest.raises(MelittaConnectionError):
+                await client.async_connect()
+
+    # Two rungs per attempt, and each attempt starts on the next proxy.
+    assert tried == ["proxy-a"] * 2 + ["proxy-b"] * 2 + ["proxy-c"] * 2
+
+
+async def test_the_bonded_adapter_wins_over_the_rotation() -> None:
+    """Once one is known to work, stay on it rather than round-robin."""
+    proxies = [_device("proxy-a"), _device("proxy-b")]
+    client = MelittaBleClient(lambda: proxies, name="Machine")
+    client.last_good_source = "proxy-b"
+    client._rotation = 1
+
+    assert client._pick_device().details["source"] == "proxy-b"
+
+
+async def test_clearing_the_bond_is_something_you_ask_for() -> None:
+    """The escape hatch for a bond no adapter can use any more."""
+    gatt = _fake_gatt_client()
+    gatt.unpair = AsyncMock()
+    client = _make_client()
+    client.last_good_source = "unknown adapter"
+
+    with patch(ESTABLISH, AsyncMock(return_value=gatt)):
+        await client.async_clear_bond()
+
+    gatt.unpair.assert_awaited_once()
+    assert client.last_good_source is None

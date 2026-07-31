@@ -10,7 +10,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 
 from .brand import async_serve_brand, async_stop_serving_brand
-from .client import MelittaBleClient, scanner_source
+from .client import MelittaBleClient
 from .const import (
     CONF_BRAND_ICON,
     CONF_CONNECT_TIMEOUT,
@@ -54,26 +54,29 @@ async def async_setup_entry(hass: HomeAssistant, entry: MelittaConfigEntry) -> b
     client: MelittaBleClient | None = None
 
     def _device_provider():
-        """Look up the current BLEDevice, preferring the path that last worked.
+        """The machine as every adapter that can hear it sees it.
 
-        Home Assistant hands out whichever adapter or proxy heard the machine
-        loudest, and that flips between them advert by advert. The machine
-        bonds per adapter, so a flip lands on one holding no key it trusts:
-        the link comes up, the machine ignores the handshake, and the session
-        dies seconds after it started. Going back to the adapter that carried
-        the last working session avoids the whole cycle.
+        Home Assistant would hand out whichever adapter heard it loudest, but
+        bonds are held per adapter: the loudest one may be holding no key the
+        machine trusts, and then the link comes up and the machine ignores
+        everything sent over it. Handing the client the whole list lets it
+        stay on the adapter that works and move on from one that does not.
         """
-        preferred = client.last_good_source if client is not None else None
-        if preferred is not None:
+        devices = [
+            scanner_device.ble_device
             for scanner_device in bluetooth.async_scanner_devices_by_address(
                 hass, address, connectable=True
-            ):
-                if scanner_source(scanner_device.ble_device) == preferred:
-                    return scanner_device.ble_device
+            )
+        ]
+        if devices:
+            return devices
 
-        return bluetooth.async_ble_device_from_address(hass, address, connectable=True)
+        single = bluetooth.async_ble_device_from_address(
+            hass, address, connectable=True
+        )
+        return [single] if single is not None else []
 
-    if _device_provider() is None:
+    if not _device_provider():
         raise ConfigEntryNotReady(
             f"Could not find {address}. Make sure the machine is switched on and "
             "in range of a Bluetooth adapter or proxy."

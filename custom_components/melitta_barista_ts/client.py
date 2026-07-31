@@ -33,7 +33,9 @@ from .protocol import MachineStatus
 
 _LOGGER = logging.getLogger(__name__)
 
-DeviceProvider = Callable[[], BLEDevice | None]
+#: Returns the machine as each adapter that can hear it sees it, best
+#: signal first — or a single device, which is all the tests need.
+DeviceProvider = Callable[[], "list[BLEDevice] | BLEDevice | None"]
 
 
 class MelittaConnectionError(MachineError):
@@ -65,6 +67,7 @@ class MelittaBleClient:
         #: Adapter or proxy that carried the last working session. Bonds are
         #: held per adapter, so the one that worked is worth going back to.
         self.last_good_source: str | None = None
+        self._rotation = 0
         self.machine = MelittaMachine(self._write, frame_timeout=frame_timeout)
 
     # -- state -----------------------------------------------------------
@@ -107,7 +110,7 @@ class MelittaBleClient:
                 return
             await self._async_disconnect_locked()
 
-            device = self._device_provider()
+            device = self._pick_device()
             if device is None:
                 raise MelittaConnectionError(
                     f"{self._name} is not currently visible to any Bluetooth adapter"
@@ -116,36 +119,29 @@ class MelittaBleClient:
             if self._use_pairing_agent:
                 await async_ensure_agent()
 
-            # A third rung is appended below when bonding is refused.
-            attempts = [False, True]
-            bond_cleared = False
             last_error: Exception | None = None
-            first = True
             silent_machine = False
+            refused = False
 
-            while attempts:
-                pair = attempts.pop(0)
-                if not first:
+            for index, pair in enumerate((False, True)):
+                if index:
                     # Let the adapter or proxy release the previous connection
                     # slot before asking for a bond on a fresh one.
                     await asyncio.sleep(PAIR_SETTLE_DELAY)
-                first = False
                 try:
                     await self._async_open_session(device, pair=pair)
                 except (MelittaConnectionError, MachineError, BleakError) as err:
                     _LOGGER.debug(
-                        "Session setup failed for %s (pair=%s): %s",
+                        "Session setup failed for %s via %s (pair=%s): %s",
                         device.address,
+                        scanner_source(device),
                         pair,
                         err,
                     )
                     last_error = err
                     silent_machine = silent_machine or _went_silent(err)
+                    refused = refused or _is_pairing_refused(err)
                     await self._async_disconnect_locked()
-                    if pair and not bond_cleared and _is_pairing_refused(err):
-                        bond_cleared = True
-                        await self._async_clear_bond(device)
-                        attempts.append(True)
                     continue
 
                 self.last_good_source = scanner_source(device)
@@ -157,8 +153,23 @@ class MelittaBleClient:
                 )
                 return
 
+            # Bonds are per adapter, and one holding a key the machine has
+            # forgotten refuses every attempt for good. Give up on this
+            # adapter and let the next connect try another one, rather than
+            # asking the same one again every poll for ever.
+            self._rotation += 1
+            if refused and self.last_good_source == scanner_source(device):
+                self.last_good_source = None
+
             message = f"could not establish a session with {self._name}: {last_error}"
-            if silent_machine:
+            if refused:
+                message += (
+                    f". {scanner_source(device)} holds a bond the machine no "
+                    "longer accepts; the next attempt will use a different "
+                    "adapter, and melitta_barista_ts.repair_connection drops "
+                    "the bond if none of them work"
+                )
+            elif silent_machine:
                 # The link came up and the machine ignored the handshake, so
                 # there is no bond it trusts — and Numeric Comparison cannot be
                 # completed from this side alone. Say so, or the failure reads
@@ -170,6 +181,40 @@ class MelittaBleClient:
                     "and confirm the code shown on its display"
                 )
             raise MelittaConnectionError(message)
+
+    def _pick_device(self) -> BLEDevice | None:
+        """Choose which adapter's view of the machine to connect through.
+
+        The adapter that carried the last working session comes first: bonds
+        are held per adapter, and going back to the bonded one avoids a
+        handshake the machine would ignore. Failing that the candidates are
+        rotated, so an adapter that cannot bond is not retried every single
+        poll while eight others go untried.
+        """
+        candidates = self._device_provider()
+        if not isinstance(candidates, (list, tuple)):
+            return candidates  # a provider that only knows one device
+        if not candidates:
+            return None
+
+        if self.last_good_source is not None:
+            for device in candidates:
+                if scanner_source(device) == self.last_good_source:
+                    return device
+
+        return candidates[self._rotation % len(candidates)]
+
+    async def async_clear_bond(self) -> None:
+        """Drop the bond on the adapter the machine is reachable through."""
+        device = self._pick_device()
+        if device is None:
+            raise MelittaConnectionError(
+                f"{self._name} is not currently visible to any Bluetooth adapter"
+            )
+        async with self._connect_lock:
+            await self._async_disconnect_locked()
+            await self._async_clear_bond(device)
+        self.last_good_source = None
 
     async def _async_clear_bond(self, device: BLEDevice) -> None:
         """Forget the bond this side holds, so the next attempt pairs afresh.

@@ -405,6 +405,10 @@
           "description": "Highest register ID to read, inclusive."
         }
       }
+    },
+    "repair_connection": {
+      "name": "Repair the connection",
+      "description": "Drop the Bluetooth bond and reconnect from scratch. For a machine that keeps refusing to pair because the adapter holds a key it no longer accepts. Bonding again needs pairing mode enabled on the machine and the code confirmed on its display."
     }
   },
   "exceptions": {

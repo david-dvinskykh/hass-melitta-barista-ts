@@ -590,6 +590,7 @@ SERVICE_SET_CLOCK: Final = "set_clock"
 SERVICE_WRITE_SETTING: Final = "write_setting"
 SERVICE_READ_SETTING: Final = "read_setting"
 SERVICE_SCAN_SETTINGS: Final = "scan_settings"
+SERVICE_REPAIR_CONNECTION: Final = "repair_connection"
 
 ATTR_DRINK: Final = "drink"
 ATTR_TWO_CUPS: Final = "two_cups"
