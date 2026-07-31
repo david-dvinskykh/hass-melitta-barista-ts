@@ -23,6 +23,7 @@ from homeassistant.util import dt as dt_util
 
 from .const import (
     ATTR_BEAN_HOPPER,
+    ATTR_COMMAND,
     ATTR_DRINK,
     ATTR_FIRST_ID,
     ATTR_INTENSITY,
@@ -40,6 +41,7 @@ from .const import (
     PORTION_MIN_ML,
     SERVICE_BREW,
     SERVICE_CANCEL,
+    SERVICE_READ_FRAME,
     SERVICE_READ_SETTING,
     SERVICE_REPAIR_CONNECTION,
     SERVICE_SCAN_SETTINGS,
@@ -119,6 +121,16 @@ SCAN_SETTINGS_SCHEMA = _DEVICE_SCHEMA.extend(
             vol.Coerce(int), vol.Range(min=0, max=32767)
         ),
     }
+)
+
+
+#: Frames the machine sends that this integration does not decode. Reading
+#: one is a request for information, not a change, so the list is limited to
+#: those rather than opened up to anything.
+READABLE_FRAMES: Final[tuple[str, ...]] = ("HF", "HL", "HP", "HQ")
+
+READ_FRAME_SCHEMA = _DEVICE_SCHEMA.extend(
+    {vol.Required(ATTR_COMMAND): vol.In(READABLE_FRAMES)}
 )
 
 
@@ -311,6 +323,15 @@ def async_setup_services(hass: HomeAssistant) -> None:
             except MachineError as err:
                 raise HomeAssistantError(f"Could not clear the bond: {err}") from err
 
+    async def _async_read_frame(call: ServiceCall) -> ServiceResponse:
+        command = call.data[ATTR_COMMAND]
+        coordinator = _one_coordinator(hass, call)
+        try:
+            payload = await coordinator.async_read_frame(command)
+        except MachineError as err:
+            raise HomeAssistantError(f"Could not read {command}: {err}") from err
+        return {"command": command, "payload": payload.hex()}
+
     hass.services.async_register(DOMAIN, SERVICE_BREW, _async_brew, BREW_SCHEMA)
     hass.services.async_register(DOMAIN, SERVICE_CANCEL, _async_cancel, CANCEL_SCHEMA)
     hass.services.async_register(
@@ -328,6 +349,13 @@ def async_setup_services(hass: HomeAssistant) -> None:
     )
     hass.services.async_register(
         DOMAIN, SERVICE_REPAIR_CONNECTION, _async_repair_connection, CANCEL_SCHEMA
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_READ_FRAME,
+        _async_read_frame,
+        READ_FRAME_SCHEMA,
+        supports_response=SupportsResponse.ONLY,
     )
     hass.services.async_register(
         DOMAIN,

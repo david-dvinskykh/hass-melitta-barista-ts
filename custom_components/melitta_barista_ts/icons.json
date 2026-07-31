@@ -190,6 +190,9 @@
     },
     "repair_connection": {
       "service": "mdi:bluetooth-connect"
+    },
+    "read_frame": {
+      "service": "mdi:magnify-scan"
     }
   }
 }

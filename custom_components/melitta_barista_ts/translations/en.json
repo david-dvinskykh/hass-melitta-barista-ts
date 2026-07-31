@@ -409,6 +409,16 @@
     "repair_connection": {
       "name": "Repair the connection",
       "description": "Drop the Bluetooth bond and reconnect from scratch. For a machine that keeps refusing to pair because the adapter holds a key it no longer accepts. Bonding again needs pairing mode enabled on the machine and the code confirmed on its display."
+    },
+    "read_frame": {
+      "name": "Read a raw frame",
+      "description": "Ask the machine for one of the frames this integration does not decode and return its bytes. For working out what they contain.",
+      "fields": {
+        "command": {
+          "name": "Frame",
+          "description": "Which frame to ask for."
+        }
+      }
     }
   },
   "exceptions": {

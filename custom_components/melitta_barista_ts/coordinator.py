@@ -510,6 +510,10 @@ class MelittaCoordinator(DataUpdateCoordinator[MelittaData]):
         self.async_invalidate_settings()
         await self.async_request_refresh()
 
+    async def async_read_frame(self, command: str) -> bytes:
+        """Read one raw frame from the machine."""
+        return await self.client.async_run(self.client.machine.read_raw, command)
+
     async def async_repair_connection(self) -> None:
         """Drop the bond and reconnect from scratch.
 

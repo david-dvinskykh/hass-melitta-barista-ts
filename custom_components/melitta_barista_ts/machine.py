@@ -308,6 +308,15 @@ class MelittaMachine:
             )
         raise CommandTimeout(f"no answer for text register {value_id}")
 
+    async def read_raw(self, command: str) -> bytes:
+        """Ask for a frame this integration does not decode, and return it.
+
+        The machine answers several commands whose contents are not
+        described anywhere — ``HF``, ``HP``, ``HQ``. Being able to look at
+        them is how they stop being undescribed.
+        """
+        return await self._request(command, None, command)
+
     async def read_recipe(self, recipe_id: int) -> MachineRecipe:
         """Read a stored recipe (``HC``)."""
         payload = await self._request(
