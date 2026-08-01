@@ -540,6 +540,31 @@ class CareProgramme(IntEnum):
     MILK_SYSTEM_CLEANING = 164
 
 
+class CareDue(IntEnum):
+    """Registers the machine raises when it wants a programme run.
+
+    Found by scanning while the machine was asking for a coffee system
+    cleaning and reading again once it had been done: register 61 went from
+    1 to 0, and 60 — the count of brews since the last one — reset from 111
+    to 0. The block repeats every ten registers, in the order the machine's
+    own Care screen lists the programmes.
+    """
+
+    MILK_SYSTEM_CLEANING = 51
+    COFFEE_SYSTEM_CLEANING = 61
+    DESCALING = 71
+
+
+#: Uses accumulated since each programme was last run, one register below
+#: the flag that goes with it.
+CARE_SINCE_OFFSET: Final = -1
+
+CARE_DUE_SLUGS: Final[dict[CareDue, str]] = {
+    CareDue.MILK_SYSTEM_CLEANING: "milk_system_cleaning_due",
+    CareDue.COFFEE_SYSTEM_CLEANING: "coffee_system_cleaning_due",
+    CareDue.DESCALING: "descaling_due",
+}
+
 CARE_SLUGS: Final[dict[CareProgramme, str]] = {
     CareProgramme.MILK_SYSTEM_CLEANING: "milk_system_cleanings",
     CareProgramme.COFFEE_SYSTEM_CLEANING: "coffee_system_cleanings",

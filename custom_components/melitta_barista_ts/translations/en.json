@@ -71,6 +71,15 @@
       },
       "easy_clean_required": {
         "name": "Easy Clean required"
+      },
+      "milk_system_cleaning_due": {
+        "name": "Milk system cleaning due"
+      },
+      "coffee_system_cleaning_due": {
+        "name": "Coffee system cleaning due"
+      },
+      "descaling_due": {
+        "name": "Descaling due"
       }
     },
     "button": {

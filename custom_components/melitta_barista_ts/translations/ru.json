@@ -71,6 +71,15 @@
       },
       "easy_clean_required": {
         "name": "Требуется Easy Clean"
+      },
+      "milk_system_cleaning_due": {
+        "name": "Требуется очистка молочной системы"
+      },
+      "coffee_system_cleaning_due": {
+        "name": "Требуется очистка кофейной системы"
+      },
+      "descaling_due": {
+        "name": "Требуется удаление накипи"
       }
     },
     "button": {

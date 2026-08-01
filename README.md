@@ -112,6 +112,7 @@ bluetoothctl
 | Machine clock, Firmware | sensor | Diagnostic, disabled by default |
 | Brewing, Maintenance running | binary sensor | |
 | Water tank empty, Trays full, Trays missing, Brew unit removed, Powder lid open, Bean hopper 1/2 empty, Easy Clean required | binary sensor | Problem class |
+| Milk system cleaning due, Coffee system cleaning due, Descaling due | binary sensor | What the machine is asking for on its display |
 | Drink | select | What the Brew button makes |
 | Profile, Profile drink | select | What the Brew from profile button makes |
 | Strength, Brew temperature, Bean hopper | select | Applied to the next brew |

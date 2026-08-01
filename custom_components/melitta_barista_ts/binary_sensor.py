@@ -14,7 +14,13 @@ from homeassistant.components.binary_sensor import (
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import InfoMessage, MachineProcess, Manipulation
+from .const import (
+    CARE_DUE_SLUGS,
+    CareDue,
+    InfoMessage,
+    MachineProcess,
+    Manipulation,
+)
 from .coordinator import MelittaConfigEntry, MelittaCoordinator, MelittaData
 from .entity import MelittaEntity
 
@@ -61,6 +67,26 @@ def _maintenance(data: MelittaData) -> bool | None:
         MachineProcess.EVAPORATING,
     }
 
+
+def _care_due(programme: CareDue) -> Callable[[MelittaData], bool | None]:
+    """True while the machine is asking for that programme to be run."""
+    return lambda data: data.care_due.get(programme)
+
+
+#: What the machine puts on its display, as a flag per programme. Confirmed
+#: on the coffee system: the flag stood at 1 while the machine asked for the
+#: cleaning and dropped to 0 the moment it had been done. The other two sit
+#: at the same offset in the same block, ten registers apart, in the order
+#: the machine's own Care screen lists them.
+CARE_DUE_SENSORS: Final[tuple[MelittaBinarySensorDescription, ...]] = tuple(
+    MelittaBinarySensorDescription(
+        key=slug,
+        translation_key=slug,
+        device_class=BinarySensorDeviceClass.PROBLEM,
+        value_fn=_care_due(programme),
+    )
+    for programme, slug in CARE_DUE_SLUGS.items()
+)
 
 BINARY_SENSORS: Final[tuple[MelittaBinarySensorDescription, ...]] = (
     MelittaBinarySensorDescription(
@@ -134,7 +160,7 @@ async def async_setup_entry(
     """Set up the binary sensor entities."""
     async_add_entities(
         MelittaBinarySensor(entry.runtime_data, description)
-        for description in BINARY_SENSORS
+        for description in (*BINARY_SENSORS, *CARE_DUE_SENSORS)
     )
 
 

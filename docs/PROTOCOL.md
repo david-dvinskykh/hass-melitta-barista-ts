@@ -333,6 +333,8 @@ that was never named reads back as the machine's placeholder — literally
 | 21 | clock (write) — `hour * 60 + minute` |
 | 22 | temperature |
 | 91 | filter |
+| 50, 60, 70 | uses since that programme was last run |
+| 51, 61, 71 | 1 while the machine is asking for that programme |
 | 100 + recipe_type | per-drink cup counter |
 | 150 | total dispense counter, hot water included |
 | 151 | hot water dispenses |
@@ -353,9 +355,29 @@ confirmed, which is why the integration exposes them only through the raw
 
 Registers 161–164 were matched one by one against the machine's own
 Statistics → Care screen, which showed exactly their values. They count
-programmes **already run**; the progress bars the same screen draws next to
-them — the machine's own "this is due now" signal — have not been located in
-any register yet.
+programmes **already run**.
+
+Whether one is *due* lives in a separate block, ten registers apart, in the
+order that screen lists the programmes: 50/51 milk system, 60/61 coffee
+system, 70/71 descaling. The odd register is the flag, the even one counts
+uses since the programme was last run. Watched across a coffee system
+cleaning on the machine:
+
+| | before | after |
+|---|---|---|
+| 60 uses since | 111 | 0 |
+| 61 due | 1 | 0 |
+| 161 times run | 25 | 26 |
+
+The milk system and descaling pairs are read the same way by symmetry —
+their position in the block is established, their behaviour has not been
+watched across a run of those programmes.
+
+The status frame carries none of this: while the machine was asking for the
+cleaning it reported `info_messages=5` (beans and Easy Clean, both from the
+drink just made) and `manipulation=0`. Neither do the undecoded frames —
+`HF` is the model configuration string (`BAR-C-TS-STD-2-`) and `HQ` a
+firmware build stamp (`20221004_030844`).
 
 Register 150 runs ahead of the total the machine displays by exactly the hot
 water count: a machine showing 5406 drinks and 59 hot water dispenses reads

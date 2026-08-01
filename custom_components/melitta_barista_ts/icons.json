@@ -60,6 +60,24 @@
         "state": {
           "on": "mdi:water-alert"
         }
+      },
+      "milk_system_cleaning_due": {
+        "default": "mdi:spray-bottle",
+        "state": {
+          "on": "mdi:alert-circle-outline"
+        }
+      },
+      "coffee_system_cleaning_due": {
+        "default": "mdi:coffee-maker-check",
+        "state": {
+          "on": "mdi:alert-circle-outline"
+        }
+      },
+      "descaling_due": {
+        "default": "mdi:water-percent",
+        "state": {
+          "on": "mdi:water-percent-alert"
+        }
       }
     },
     "sensor": {

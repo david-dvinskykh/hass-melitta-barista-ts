@@ -114,7 +114,10 @@ def test_every_entity_translation_key_is_declared() -> None:
         assert description.translation_key in declared_sensors
 
     declared_binary = set(STRINGS["entity"]["binary_sensor"])
-    for description in binary_sensor.BINARY_SENSORS:
+    for description in (
+        *binary_sensor.BINARY_SENSORS,
+        *binary_sensor.CARE_DUE_SENSORS,
+    ):
         assert description.translation_key in declared_binary
 
     # The per-drink counter sensors share one templated key.

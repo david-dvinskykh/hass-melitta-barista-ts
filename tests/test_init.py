@@ -18,6 +18,7 @@ from custom_components.melitta_barista_ts.const import (
     DOMAIN,
     SERVICE_BREW,
     SERVICE_CANCEL,
+    CareDue,
     CareProgramme,
     DirectKeyCategory,
     Intensity,
@@ -679,3 +680,31 @@ async def test_the_logo_is_served_only_when_asked_for(
         await hass.config_entries.async_unload(config_entry.entry_id)
         await hass.async_block_till_done()
         stop.assert_called_once()
+
+
+async def test_a_care_programme_the_machine_is_asking_for(
+    hass: HomeAssistant, config_entry
+) -> None:
+    """The flag the machine raises for a due programme becomes a problem sensor.
+
+    Register 61 stood at 1 while the machine asked for a coffee system
+    cleaning and dropped to 0 once it had been run.
+    """
+    registers = {CareDue.COFFEE_SYSTEM_CLEANING: 1, CareDue.DESCALING: 0}
+
+    async def _read_numerical(value_id: int) -> int:
+        return registers.get(value_id, 0)
+
+    client = _make_client()
+    client.machine.read_numerical = AsyncMock(side_effect=_read_numerical)
+    await _setup(hass, config_entry, client)
+    await _poll_again(hass, config_entry)
+
+    machine_name = "melitta_barista_ts_smart"
+    assert (
+        hass.states.get(
+            f"binary_sensor.{machine_name}_coffee_system_cleaning_due"
+        ).state
+        == "on"
+    )
+    assert hass.states.get(f"binary_sensor.{machine_name}_descaling_due").state == "off"
