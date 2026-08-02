@@ -691,6 +691,7 @@ async def test_a_care_programme_the_machine_is_asking_for(
     cleaning and dropped to 0 once it had been run.
     """
     registers = {CareDue.COFFEE_SYSTEM_CLEANING: 1, CareDue.DESCALING: 0}
+    assert CareDue.DESCALING == 51  # not 71, whatever the Care screen order
 
     async def _read_numerical(value_id: int) -> int:
         return registers.get(value_id, 0)

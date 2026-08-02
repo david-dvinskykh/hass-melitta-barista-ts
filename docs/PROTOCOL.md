@@ -357,11 +357,17 @@ Registers 161–164 were matched one by one against the machine's own
 Statistics → Care screen, which showed exactly their values. They count
 programmes **already run**.
 
-Whether one is *due* lives in a separate block, ten registers apart, in the
-order that screen lists the programmes: 50/51 milk system, 60/61 coffee
-system, 70/71 descaling. The odd register is the flag, the even one counts
-uses since the programme was last run. Watched across a coffee system
-cleaning on the machine:
+Whether one is *due* lives in a separate block, ten registers apart: 50/51
+descaling, 60/61 coffee system, 70/71 milk system. The odd register is the
+flag, the even one counts uses since the programme was last run.
+
+That order is **not** the one the Care screen lists them in, which is how
+the mapping was got wrong the first time: assuming the screen order put
+"milk system" on the descaling flag. Both were then caught on the machine —
+61 across a coffee system cleaning, and 51 by the machine asking for
+descaling while it stood at 1 and 71 at 0.
+
+Across the coffee system cleaning:
 
 | | before | after |
 |---|---|---|
@@ -369,9 +375,8 @@ cleaning on the machine:
 | 61 due | 1 | 0 |
 | 161 times run | 25 | 26 |
 
-The milk system and descaling pairs are read the same way by symmetry —
-their position in the block is established, their behaviour has not been
-watched across a run of those programmes.
+The milk system pair is the one left over, so it is the only one not
+watched against something the machine displayed.
 
 The status frame carries none of this: while the machine was asking for the
 cleaning it reported `info_messages=5` (beans and Easy Clean, both from the
