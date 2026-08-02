@@ -120,6 +120,7 @@ bluetoothctl
 | Two cups | switch | Applied to the next brew |
 | Switch off after | number | Written to the machine |
 | Brew, Brew from profile, Cancel, Sync clock | button | |
+| Easy Clean | button | Runs the milk unit rinse — put a container under the outlet |
 | Espresso key, Café Crème key, Cappuccino key, Latte Macchiato key, Milk froth key, Milk key, Hot water key | button | The machine's direct-select keys |
 
 Selecting a drink reads that recipe from the machine and loads its stored

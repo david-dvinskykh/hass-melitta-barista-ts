@@ -115,6 +115,9 @@
       },
       "key_hot_water": {
         "name": "Клавиша «Горячая вода»"
+      },
+      "easy_clean": {
+        "name": "Easy Clean (промывка молочной системы)"
       }
     },
     "number": {

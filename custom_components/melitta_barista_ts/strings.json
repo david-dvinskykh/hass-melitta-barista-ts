@@ -115,6 +115,9 @@
       },
       "key_hot_water": {
         "name": "Hot water key"
+      },
+      "easy_clean": {
+        "name": "Easy Clean"
       }
     },
     "number": {

@@ -14,6 +14,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 
 from .client import MelittaBleClient, MelittaConnectionError
 from .const import (
+    BREW_READY_PROCESSES,
     CARE_SINCE_OFFSET,
     CUP_COUNTER_BASE_ID,
     DIRECTKEY_DISPLAY_NAMES,
@@ -31,6 +32,7 @@ from .const import (
     CareProgramme,
     DirectKeyCategory,
     Intensity,
+    MachineProcess,
     MachineType,
     RecipeId,
     SettingId,
@@ -495,6 +497,19 @@ class MelittaCoordinator(DataUpdateCoordinator[MelittaData]):
             blend=int(settings.blend if blend is None else blend) or None,
         )
         self.async_invalidate_counters()
+        await self.async_request_refresh()
+
+    async def async_start_care(self, process: MachineProcess) -> None:
+        """Start one of the machine's care programmes.
+
+        The same ``HE`` that starts a drink, so the machine has to be idle —
+        and, like a drink, it dispenses: put something under the outlet
+        first.
+        """
+        status = self.data.status
+        if status is not None and status.process not in BREW_READY_PROCESSES:
+            raise MachineError("the machine is busy")
+        await self.client.async_run(self.client.machine.start_process, int(process))
         await self.async_request_refresh()
 
     async def async_cancel(self) -> None:

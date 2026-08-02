@@ -151,6 +151,9 @@
       },
       "key_hot_water": {
         "default": "mdi:kettle-steam"
+      },
+      "easy_clean": {
+        "default": "mdi:water-sync"
       }
     },
     "select": {

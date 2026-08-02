@@ -8,7 +8,12 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util import dt as dt_util
 
-from .const import BREW_READY_PROCESSES, DIRECTKEY_SLUGS, DirectKeyCategory
+from .const import (
+    BREW_READY_PROCESSES,
+    DIRECTKEY_SLUGS,
+    DirectKeyCategory,
+    MachineProcess,
+)
 from .coordinator import MelittaConfigEntry, MelittaCoordinator
 from .entity import MelittaEntity
 from .machine import MachineError
@@ -27,6 +32,7 @@ async def async_setup_entry(
             MelittaBrewProfileButton(coordinator),
             MelittaCancelButton(coordinator),
             MelittaSyncClockButton(coordinator),
+            MelittaEasyCleanButton(coordinator),
             *(
                 MelittaDirectKeyButton(coordinator, category)
                 for category in DirectKeyCategory
@@ -160,3 +166,33 @@ class MelittaDirectKeyButton(MelittaEntity, ButtonEntity):
             await self.coordinator.async_press_direct_key(self._category)
         except MachineError as err:
             raise HomeAssistantError(f"Could not start brewing: {err}") from err
+
+
+class MelittaEasyCleanButton(MelittaEntity, ButtonEntity):
+    """Run the quick rinse of the milk unit.
+
+    The machine asks for this after a milk drink, and the Easy Clean
+    required sensor says when. It dispenses hot water through the frother,
+    so there wants to be a container under the outlet before pressing it.
+    """
+
+    _attr_translation_key = "easy_clean"
+
+    def __init__(self, coordinator: MelittaCoordinator) -> None:
+        """Register the button."""
+        super().__init__(coordinator, "easy_clean")
+
+    @property
+    def available(self) -> bool:
+        """Only offered while the machine is idle and ready."""
+        if not super().available:
+            return False
+        status = self.coordinator.data.status
+        return status is not None and status.process in BREW_READY_PROCESSES
+
+    async def async_press(self) -> None:
+        """Start the Easy Clean programme."""
+        try:
+            await self.coordinator.async_start_care(MachineProcess.EASY_CLEAN)
+        except MachineError as err:
+            raise HomeAssistantError(f"Could not start Easy Clean: {err}") from err

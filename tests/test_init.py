@@ -83,6 +83,7 @@ def _make_client(status: MachineStatus = READY) -> MagicMock:
     machine.write_numerical = AsyncMock()
     machine.brew = AsyncMock()
     machine.cancel_process = AsyncMock()
+    machine.start_process = AsyncMock()
 
     client = MagicMock()
     client.machine = machine
@@ -709,3 +710,28 @@ async def test_a_care_programme_the_machine_is_asking_for(
         == "on"
     )
     assert hass.states.get(f"binary_sensor.{machine_name}_descaling_due").state == "off"
+
+
+async def test_easy_clean_starts_the_rinse(hass: HomeAssistant, config_entry) -> None:
+    """The button runs the machine's own Easy Clean programme."""
+    client = _make_client()
+    await _setup(hass, config_entry, client)
+
+    await hass.services.async_call(
+        "button",
+        "press",
+        {"entity_id": "button.melitta_barista_ts_smart_easy_clean"},
+        blocking=True,
+    )
+
+    client.machine.start_process.assert_awaited_once_with(17)
+
+
+async def test_easy_clean_is_not_offered_mid_drink(
+    hass: HomeAssistant, config_entry
+) -> None:
+    """Starting it needs the same idle machine a brew does."""
+    await _setup(hass, config_entry, _make_client(BREWING))
+
+    state = hass.states.get("button.melitta_barista_ts_smart_easy_clean")
+    assert state.state == STATE_UNAVAILABLE
